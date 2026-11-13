@@ -1,6 +1,6 @@
 # Timone · piattaforma di controllo e analisi aziendale
 
-Versione 1.9.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**, **Finanziamenti e agevolazioni**.
+Versione 1.10.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**, **Finanziamenti e agevolazioni**, **Commerciale**.
 
 Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [LIMITI.md](LIMITI.md).
 "Timone" è un nome di lavoro: si cambia in `index.html` e `manifest.json`.
@@ -25,6 +25,7 @@ Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [
 - **Modulo Investimenti** (attivabile per azienda): per ogni investimento ipotizzato (macchinari, impianti, automazione, software, veicoli, immobili, ampliamenti) flussi di cassa anno per anno, VAN, TIR, tempo di recupero semplice e attualizzato, redditività media, piano di rimborso del finanziamento e copertura della rata, sensibilità («e se i benefici calassero del 10-20-30%?»), effetto su EBITDA, debito netto e liquidità dell'azienda, esito (conviene, conviene con riserva, non conviene) e classifica tra più investimenti. I benefici sono ipotesi dell'utente e sono dichiarati come tali.
 - **Modulo Decisioni produttive – «Produrre o fermare?»** (attivabile per azienda): per una linea o un prodotto, su un periodo di alcuni mesi, simula mese per mese sei alternative (continuare a pieno ritmo, ridurre, produrre solo su ordinazione, produrre in anticipo e poi fermare, fermare temporaneamente, esternalizzare) e per ciascuna calcola risultato economico, effetto sulla cassa, scorte, capitale immobilizzato, costo finanziario, rischio di obsolescenza e vendite perse; distingue i costi fissi evitabili con il fermo da quelli che restano; ripete il confronto con i soli ordini confermati.
 - **Modulo Finanziamenti, mutui e agevolazioni** (attivabile per azienda): mutui e prestiti (rata costante, quota capitale costante, capitale alla scadenza, preammortamento, rate mensili o periodiche), leasing e fidi; piano di rimborso, costo totale e tasso effettivo con le spese; a fine esercizio o a oggi: debito residuo, quota entro e oltre 12 mesi, rate dei 12 mesi successivi, tasso medio, effetto di un punto di tasso in più; confronto con debiti e interessi di bilancio e copertura delle rate con l'EBITDA; confronto tra offerte sul tasso effettivo; simulazione di estinzione anticipata e rinegoziazione; **registro delle agevolazioni** con fonte, data di verifica, termine e requisiti (Timone non cerca bandi e non ne inventa).
+- **Modulo Commerciale** (attivabile per azienda): vendite per cliente e per mese importate da Excel/CSV o inserite a mano; ricavi, margine e quota di ogni cliente, classi ABC, concentrazione; clienti nuovi, persi, in calo e fermi; mantenimento dei ricavi; stagionalità; settori, zone e famiglie di prodotto più redditizi («dove cercare nuovi clienti», senza inventare nominativi); tempi di pagamento e costo del ritardo; confronto con i ricavi di bilancio; **trattative** con valore, probabilità, fase, chiusura prevista e fonte del contatto, valore ponderato e tasso di successo; simulazioni «e se perdessi questo cliente?» e «quanto costa uno sconto?».
 - **Simulazione generale**: generatore di aziende di fantasia (5 settori × 6 situazioni, riproducibili con un seme), collaudo dell'azienda aperta e collaudo massivo del motore.
 - Aggiornamento: l'app resta sulla versione installata finché non si preme "Aggiorna" (compare solo se `versione.json` indica una versione più recente).
 
@@ -48,6 +49,7 @@ Regole applicate ovunque: nessun dato inventato, i vuoti non valgono zero, le st
 | `investimenti.js`, `ui-investimenti.js` | modulo Investimenti: calcolo e interfaccia |
 | `decisioni.js`, `ui-decisioni.js` | modulo Decisioni produttive: calcolo e interfaccia |
 | `finanziamenti.js`, `ui-finanziamenti.js` | modulo Finanziamenti, mutui e agevolazioni: calcolo e interfaccia |
+| `commerciale.js`, `ui-commerciale.js` | modulo Commerciale: calcolo, importazione e interfaccia |
 | `LIMITI.md` | registro dei limiti aperti |
 | `dati.js` | archivio: dispositivo, Supabase cloud, server aziendale |
 | `supabase-setup.sql` | schema del database con isolamento per azienda |
@@ -76,6 +78,7 @@ Il nucleo non va modificato: la scheda compare da sola, le criticità entrano ne
 
 - Motore: 43 test su un caso calcolato a mano + 7.680 controlli su 240 aziende simulate, tutti superati.
 - Commesse: 29 test su un caso calcolato a mano + 1.620 controlli su 90 aziende con commesse simulate (quadratura con l'EBIT, ribaltamento integrale, costi attribuiti entro il bilancio), tutti superati.
+- Commerciale: 80 test (quote, margini, movimenti dei clienti, pagamenti, trattative e simulazioni calcolati a mano, importazione) + 1.170 controlli su 90 aziende con vendite simulate, tutti superati.
 - Finanziamenti: 88 test (piani, tasso effettivo, situazione a una data, estinzione, rinegoziazione e agevolazioni calcolati a mano) + 1.260 controlli su 90 aziende con finanziamenti simulati, tutti superati.
 - Decisioni produttive: 41 test (le sei alternative calcolate a mano su un caso) + 288 controlli su 36 aziende con casi simulati, tutti superati.
 - Investimenti: 50 test (VAN, TIR, recupero, rata e casi completi calcolati a mano) + 720 controlli su 90 aziende con investimenti simulati, tutti superati.

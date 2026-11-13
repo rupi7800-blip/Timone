@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.9.0.
+Ultimo aggiornamento: versione 1.10.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -48,7 +48,7 @@ Ultimo aggiornamento: versione 1.9.0.
 | D1 | Commesse inseribili solo a mano: manca l'importazione da file. | Importazione Excel/CSV come per il magazzino. | 🔴 |
 | D2 | Mancavano i dati per macchina: fermi, attrezzaggi, tempi ciclo, OEE, saturazione. Risolto con il modulo Produzione, che confronta anche le ore macchina delle commesse con le ore operative. | — | 🟢 1.6.0 |
 | D3 | Le ore non arrivano dall'app per dipendenti (che non esiste ancora). | App mobile con QR code e modalità offline. | 🔴 |
-| D4 | Analisi clienti senza tempi di pagamento, frequenza ordini, rischio di perdita. | Scadenziario e storico ordini (modulo commerciale). | 🔴 |
+| D4 | Nel modulo Commesse l'analisi clienti non ha tempi di pagamento, frequenza degli ordini e rischio di perdita. Dalla 1.10.0 li calcola il modulo Commerciale, ma sulle vendite importate lì: i due moduli non condividono i dati dei clienti. | Anagrafica clienti unica tra Commesse e Commerciale. | 🟡 |
 | D5 | Un solo costo orario per risorsa e un solo prezzo dell'energia per tutto l'anno. Dalla 1.5.0 il modulo Energia confronta il prezzo usato con quello reale delle bollette e segnala lo scarto, ma l'aggiornamento resta manuale e non è per mese o fascia. | Aggiornamento automatico del prezzo; tariffe per periodo e fasce orarie. | 🟡 |
 | D6 | Preventivo come unico importo (costo diretto), non per singola componente. | Preventivo dettagliato. | 🔴 |
 
@@ -154,6 +154,23 @@ Ultimo aggiornamento: versione 1.9.0.
 | R14 | Soglie (copertura minima 1,3; fonte da riverificare dopo 90 giorni; avviso 30 giorni prima del termine) fissate nel codice. | Parametri in interfaccia. | 🔴 |
 | R15 | Nel bilancio simulato la quota dei mutui in scadenza entro 12 mesi non è separata: nelle aziende di prova i debiti a breve di bilancio e quelli calcolati dai piani differiscono (i totali coincidono). | Simulatore con la quota corrente dei mutui. | 🔴 |
 
+## S. Modulo Commerciale (sviluppo commerciale e clienti)
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| S1 | **Nessuna ricerca di nuovi clienti su fonti esterne** (registro delle imprese, banche dati, web): il modulo indica i settori in cui l'azienda rende di più e tiene il registro dei contatti con la fonte, ma i nominativi li trova l'utente. | Collegamento da server a fonti verificabili, nel rispetto delle regole sui dati personali. | 🔴 |
+| S2 | Vendite importate da Excel/CSV o inserite a mano: nessun collegamento con il gestionale o con le fatture elettroniche (XML). | Lettura delle fatture elettroniche; integrazioni. | 🔴 |
+| S3 | Il margine per cliente è ricavi meno il **costo diretto indicato nel file**: non è collegato ai costi del modulo Commesse e non comprende il costo di servire il cliente (trasporti, assistenza, resi, sconti di fine anno). | Collegamento con le commesse; costi di servizio per cliente. | 🔴 |
+| S4 | Tempi di pagamento: due valori per cliente inseriti a mano (giorni concordati ed effettivi). Non c'è lo scadenziario delle fatture, né insoluti, fido per cliente, rischio di credito. | Scadenziario clienti (B10). | 🔴 |
+| S5 | «A rischio di perdita» è una regola semplice (calo di almeno il 30% oppure nessun acquisto da 3 mesi per chi comprava con regolarità), con soglie fisse nel codice: non tiene conto della frequenza tipica e della stagionalità di ogni cliente e non dà una probabilità. | Soglie in interfaccia; regole sulla frequenza d'acquisto del singolo cliente. | 🔴 |
+| S6 | Segmenti solo per settore, zona e famiglia, scritti come testo libero (due scritture diverse sono due segmenti). Nessun dato sul mercato potenziale, sulla dimensione dei clienti o sulle quote di mercato. | Elenchi guidati (ATECO, province); dati di mercato con fonte (B3). | 🔴 |
+| S7 | Trattative: le probabilità predefinite per fase sono ipotesi generali; non ci sono storico dei passaggi di fase, durata media, attività svolte, venditore assegnato. Non sostituisce un CRM. | Storico e attività; probabilità ricavate dalle trattative chiuse dell'azienda. | 🔴 |
+| S8 | La previsione delle vendite è solo il valore ponderato delle trattative: non considera ordini ricorrenti e stagionalità, e **non alimenta** budget, scenari, magazzino e decisioni produttive (il portafoglio ordini resta mancante: Q1, E6). | Portafoglio ordini e previsione collegati agli altri moduli. | 🔴 |
+| S9 | Simulazione dello sconto a margine costante: non stima la reazione dei clienti al prezzo; listini e prezzi per cliente non gestiti; nessuna scomposizione prezzo/volume (B5). | Vendite per quantità e prezzo. | 🔴 |
+| S10 | Confronto solo tra un anno e il precedente: manca l'andamento pluriennale del cliente e il suo valore nel tempo. | Serie storiche per cliente. | 🔴 |
+| S11 | I clienti sono riconosciuti dal nome: lo stesso cliente scritto in due modi diversi risulta diviso, due omonimi uniti. | Codice cliente o partita IVA come chiave. | 🔴 |
+| S12 | «Perdita di un cliente»: costi fissi invariati e nessuna sostituzione del volume; se mancano i costi diretti il margine è stimato con la media di bilancio (segnalato). | Costi per cliente (S3). | 🟡 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -173,4 +190,4 @@ Ultimo aggiornamento: versione 1.9.0.
 ## H. Moduli della specifica non ancora realizzati
 
 App mobile per dipendenti ·
-Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
+Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
