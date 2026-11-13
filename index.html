@@ -102,6 +102,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 svg text{fill:var(--muto);font-size:11px}
 .leg{display:flex;gap:14px;font-size:12px;color:var(--muto);margin-top:4px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+@media print{header,#toast,.noprint,dialog{display:none!important}body{background:#fff;color:#000;font-size:11px}main{max-width:none;padding:0}.carta{border:0;padding:0;break-inside:avoid}.scorri{overflow:visible}.avviso{border:1px solid #999;background:none;color:#000}h3{break-after:avoid}}
 </style>
 </head>
 <body>
@@ -121,6 +122,8 @@ svg text{fill:var(--muto);font-size:11px}
 <script src="importa.js"></script>
 <script src="xbrl.js"></script>
 <script src="dati.js"></script>
+<script src="commesse.js"></script>
 <script src="app.js"></script>
+<script src="ui-commesse.js"></script>
 </body>
 </html>

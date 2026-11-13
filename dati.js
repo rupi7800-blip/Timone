@@ -46,9 +46,12 @@
   };
 
   // ---------------------------------------------- Supabase / server aziendale
+  // i totali da ripartire letti dall'XBRL viaggiano nel profilo (i valori stanno nella tabella "valori")
+  function vincoliDi(az) { var v = {}; Object.keys(az.esercizi || {}).forEach(function (a) { if (az.esercizi[a].vincoli) v[a] = az.esercizi[a].vincoli; }); return v; }
   function profiloDi(az) {
     return { settore: az.settore || '', forma: az.forma || '', ateco: az.ateco || '', simulata: !!az.simulata, simulazione: az.simulazione || null,
-      classificazione: az.classificazione || {}, budget: az.budget || {}, scenari: az.scenari || {} };
+      classificazione: az.classificazione || {}, budget: az.budget || {}, scenari: az.scenari || {},
+      codiceFiscale: az.codiceFiscale || '', moduli: az.moduli || {}, commesse: az.commesse || null, vincoli: vincoliDi(az) };
   }
   var Remoto = {
     elenco: function () {
@@ -70,7 +73,8 @@
             esercizi[v.anno].valori[v.voce] = { v: Number(v.valore), origine: v.origine, fonte: v.fonte, acquisito: v.acquisito_il, stato: v.stato_verifica };
           });
           return { id: a.id, nome: a.nome, settore: p.settore, forma: p.forma, ateco: p.ateco, simulata: !!p.simulata, simulazione: p.simulazione,
-            classificazione: p.classificazione || {}, budget: p.budget || {}, scenari: p.scenari || {}, esercizi: esercizi,
+            classificazione: p.classificazione || {}, budget: p.budget || {}, scenari: p.scenari || {}, esercizi: (function () { Object.keys(p.vincoli || {}).forEach(function (a) { if (!esercizi[a]) esercizi[a] = { valori: {} }; esercizi[a].vincoli = p.vincoli[a]; }); return esercizi; })(),
+            codiceFiscale: p.codiceFiscale || '', moduli: p.moduli || {}, commesse: p.commesse || undefined,
             ruolo: (res[2][0] || {}).ruolo || 'sola_lettura',
             storico: res[1].reverse().map(function (s) { return { quando: s.quando, anno: s.anno, voce: s.voce, da: s.valore_prima === null ? null : Number(s.valore_prima), a: s.valore_dopo === null ? null : Number(s.valore_dopo), origine: s.origine, fonte: s.fonte }; }) };
         });

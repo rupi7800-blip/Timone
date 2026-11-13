@@ -3,19 +3,42 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.1.0';
+  var VERSIONE = '1.2.0';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
   var SCHEDE = [['cruscotto', 'Cruscotto'], ['bilancio', 'Bilancio'], ['indici', 'Indici'], ['diagnosi', 'Diagnosi'], ['budget', 'Budget'], ['scenari', 'Scenari'], ['collaudo', 'Simulazione'], ['impostazioni', 'Impostazioni']];
   var stato = { az: null, anno: null, scheda: 'cruscotto', sub: 'dati', utente: null, importazione: null, esitoCollaudo: null, esitoMassivo: null, scenAperto: 'centrale' };
 
+  // ------------------------------------------------------------ moduli operativi
+  // Ogni modulo si registra con Timone.registra({id, titolo, descrizione, vista, azioni, cambi, criticita, collaudo, simula}).
+  // Per ogni azienda si attivano solo i moduli che servono (Impostazioni).
+  var MODULI = [];
+  function moduloAttivo(m) { return !!stato.az && !(stato.az.moduli && stato.az.moduli[m.id] === false); }
+  function moduliAttivi() { return MODULI.filter(moduloAttivo); }
+  function schede() {
+    var out = [];
+    SCHEDE.forEach(function (s) { if (s[0] === 'collaudo') moduliAttivi().forEach(function (m) { out.push([m.id, m.titolo]); }); out.push(s); });
+    return out;
+  }
+  function criticitaModuli(anno) {
+    var out = [];
+    moduliAttivi().forEach(function (m) { if (m.criticita) (m.criticita(stato.az, anno) || []).forEach(function (c) { c.modulo = m.titolo; out.push(c); }); });
+    return out;
+  }
+  function collaudaTutto(az) {
+    var e = Sim.collauda(az);
+    MODULI.forEach(function (m) { if (m.collaudo && !(az.moduli && az.moduli[m.id] === false)) e.esiti = e.esiti.concat(m.collaudo(az) || []); });
+    e.totale = e.esiti.length; e.superati = e.esiti.filter(function (x) { return x.ok; }).length;
+    return e;
+  }
+
   // ------------------------------------------------------------ utilità
   function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var nf0 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 });
-  var nf1 = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  var nf2 = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  function eur(x) { return (x === null || x === undefined || !isFinite(x)) ? '—' : '€ ' + nf0.format(Math.round(x)); }
+  var nf0 = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0, useGrouping: 'always' });
+  var nf1 = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: 'always' });
+  var nf2 = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' });
+  function eur(x) { return (x === null || x === undefined || !isFinite(x)) ? '—' : '€ ' + nf0.format(Math.round(x) || 0); }
   function fmt(x, unita) {
     if (x === null || x === undefined || !isFinite(x)) return '—';
     if (unita === 'eur') return eur(x);
@@ -80,7 +103,7 @@
 
   // ------------------------------------------------------------ navigazione
   function disegnaNav() {
-    $('#nav').innerHTML = SCHEDE.map(function (s) { return '<button data-a="scheda" data-scheda="' + s[0] + '" class="' + (stato.scheda === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('');
+    $('#nav').innerHTML = schede().map(function (s) { return '<button data-a="scheda" data-scheda="' + s[0] + '" class="' + (stato.scheda === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('');
     $('#azBtn').textContent = stato.az ? stato.az.nome : 'Scegli azienda';
     var on = $('#nav .on'); if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
@@ -98,7 +121,9 @@
       m.innerHTML = '<h2>' + esc(stato.az.nome) + '</h2><div class="carta"><p>Non ci sono ancora esercizi. Inserisci o importa un bilancio per iniziare.</p><div class="riga"><button class="b" data-a="vai" data-scheda="bilancio" data-sub="dati">Vai al bilancio</button></div></div>';
       return;
     }
-    m.innerHTML = ({ cruscotto: vistaCruscotto, bilancio: vistaBilancio, indici: vistaIndici, diagnosi: vistaDiagnosi, budget: vistaBudget, scenari: vistaScenari, collaudo: vistaCollaudo, impostazioni: vistaImpostazioni })[stato.scheda]();
+    var mod = MODULI.filter(function (x) { return x.id === stato.scheda; })[0];
+    if (mod) { if (!moduloAttivo(mod)) { stato.scheda = 'cruscotto'; return disegna(); } m.innerHTML = mod.vista(); return; }
+    m.innerHTML = ({ report: vistaReport, cruscotto: vistaCruscotto, bilancio: vistaBilancio, indici: vistaIndici, diagnosi: vistaDiagnosi, budget: vistaBudget, scenari: vistaScenari, collaudo: vistaCollaudo, impostazioni: vistaImpostazioni })[stato.scheda]();
   }
 
   function vistaBenvenuto() {
@@ -145,7 +170,7 @@
       }
       return '<button data-a="vai" data-scheda="' + scheda + '" data-sub="' + (sub || '') + '"><div class="n">' + nome + '</div><div class="v">' + eur(v) + '</div>' + d + '</button>';
     }
-    var h = '<div class="riga"><h2 style="margin:0">' + esc(stato.az.nome) + '</h2><span class="sp"></span>' + selAnno() + '</div>' + bannerQualita(stato.anno);
+    var h = '<div class="riga"><h2 style="margin:0">' + esc(stato.az.nome) + '</h2><span class="sp"></span>' + selAnno() + '<button class="b p s" data-a="scheda" data-scheda="report">Report</button></div>' + bannerQualita(stato.anno);
     h += '<div class="kpi">' +
       tile('Ricavi', r.ricavi, rp && rp.ricavi, 'bilancio', 'riclassificato', false, ha('ricavi')) +
       tile('Costi totali', r.costi_totali, rp && rp.costi_totali, 'bilancio', 'riclassificato', true, ceOk) +
@@ -340,7 +365,9 @@
     var d = M.diagnosi(serieCompleta(stato.anno), stato.az.classificazione), q = qualita(stato.anno);
     var h = testa + bannerQualita(stato.anno, true) +
       '<p class="muto">Criticità ordinate per priorità. Le soglie sono regole generali di prudenza, non medie del settore; ogni importo è calcolato dai dati inseriti con la formula indicata nella scheda Indici.</p>';
-    if (!d.length) return h + '<div class="avviso ok">Nessuna regola ha rilevato criticità sull\'esercizio ' + stato.anno + '.</div>';
+    var extra = criticitaModuli(stato.anno);
+    if (!d.length && !extra.length) return h + '<div class="avviso ok">Nessuna regola ha rilevato criticità sull\'esercizio ' + stato.anno + '.</div>';
+    if (!d.length) h += '<div class="avviso ok">Nessuna criticità dai dati di bilancio.</div>';
     var aff = { simulata: 'dati simulati', alta: 'alta', media: 'media (dati non verificati)', bassa: 'bassa (dati incompleti)' }[q.livello];
     d.forEach(function (c) {
       var gest = ['pareggio'].indexOf(c.id) >= 0 && !q.classificazioneConfermata;
@@ -349,7 +376,44 @@
         '<div><dt>Intervento consigliato</dt><dd>' + esc(c.intervento) + '</dd></div><div><dt>Quanto pesa</dt><dd>' + esc(c.effetto) + '</dd></div>' +
         '<div><dt>Affidabilità</dt><dd>' + aff + (gest ? ' · basata su quote fissi/variabili non confermate' : '') + '</dd></div></dl></div>';
     });
+    if (extra.length) h += '<h3>Dalla gestione operativa</h3>';
+    extra.forEach(function (c) {
+      h += '<div class="carta crit ' + c.gravita + '"><h3><span class="tag ' + c.gravita + '">' + esc(c.modulo) + '</span> ' + esc(c.titolo) + '</h3><dl>' +
+        '<div><dt>Dati che lo dimostrano</dt><dd>' + esc(c.dati) + '</dd></div><div><dt>Causa probabile (ipotesi)</dt><dd>' + esc(c.causa) + '</dd></div>' +
+        '<div><dt>Intervento consigliato</dt><dd>' + esc(c.intervento) + '</dd></div><div><dt>Quanto pesa</dt><dd>' + esc(c.effetto) + '</dd></div>' +
+        '<div><dt>Affidabilità</dt><dd>' + (stato.az.simulata ? 'dati simulati' : 'dipende dalla completezza dei dati gestionali inseriti') + '</dd></div></dl></div>';
+    });
     return h + '<p class="muto">Costo dell\'intervento, investimento necessario e tempo di recupero richiedono dati che il bilancio non contiene (preventivi, contratti, piani): verranno chiesti dal modulo investimenti, non stimati a caso.</p>';
+  }
+
+  // ------------------------------------------------------------ report
+  function vistaReport() {
+    var a = anni(), i = a.indexOf(stato.anno), n = nDi(stato.anno), cl = stato.az.classificazione;
+    var h = '<div class="riga noprint"><button class="b p s" data-a="scheda" data-scheda="cruscotto">← Cruscotto</button><span class="sp"></span>' + selAnno() + '<button class="b p" data-a="stampa">Stampa / salva PDF</button></div>';
+    h += '<h2>' + esc(stato.az.nome) + ' · Report ' + stato.anno + '</h2><p class="muto">' + [stato.az.forma, stato.az.ateco ? 'ATECO ' + stato.az.ateco : '', 'generato il ' + new Date().toLocaleDateString('it-IT'), 'Timone ' + VERSIONE].filter(Boolean).map(esc).join(' · ') + '</p>' + bannerQualita(stato.anno, true);
+    h += '<h3>Bilancio riclassificato</h3>' + bilRicl();
+    if (a.length > 1) h += '<h3>Rendiconto finanziario</h3>' + bilRend();
+    var p = i > 0 ? nDi(a[i - 1]) : null, ix = M.calcolaIndici(n, p, cl), ixp = p ? M.calcolaIndici(p, i > 1 ? nDi(a[i - 2]) : null, cl) : null;
+    h += '<h3>Indici</h3><div class="carta"><div class="scorri"><table><tr><th></th>' + (ixp ? '<th>' + a[i - 1] + '</th>' : '') + '<th>' + stato.anno + '</th></tr>';
+    var g0 = '';
+    M.INDICI.forEach(function (d) {
+      if (d.gruppo !== g0) { g0 = d.gruppo; h += '<tr class="sez"><td colspan="3">' + g0 + '</td></tr>'; }
+      h += '<tr><td>' + esc(d.nome) + '</td>' + (ixp ? '<td>' + fmt(ixp[d.id].v, d.unita) + '</td>' : '') + '<td>' + fmt(ix[d.id].v, d.unita) + '</td></tr>';
+    });
+    h += '</table></div><p class="muto">“—” indica un indice non calcolabile con i dati disponibili: le voci mancanti non vengono stimate.</p></div>';
+    h += '<h3>Criticità e interventi</h3>';
+    var d = completo(stato.anno) ? M.diagnosi(serieCompleta(stato.anno), cl) : null, tutte = (d || []).concat(criticitaModuli(stato.anno));
+    if (d === null) h += '<div class="avviso rosso">Diagnosi di bilancio non eseguita: il bilancio ' + stato.anno + ' è incompleto.</div>';
+    if (!tutte.length && d !== null) h += '<div class="avviso ok">Nessuna regola ha rilevato criticità.</div>';
+    tutte.forEach(function (c, k) {
+      h += '<div class="carta crit ' + c.gravita + '"><h3>' + (k + 1) + '. ' + esc(c.titolo) + (c.modulo ? ' <span class="tag">' + esc(c.modulo) + '</span>' : '') + '</h3><p>' + esc(c.dati) + '</p><p><b>Causa probabile:</b> ' + esc(c.causa) + '</p><p><b>Intervento:</b> ' + esc(c.intervento) + '</p><p><b>Quanto pesa:</b> ' + esc(c.effetto) + '</p></div>';
+    });
+    var b = stato.az.budget && stato.az.budget[stato.anno];
+    if (b && completo(stato.anno, 'ce')) {
+      var sc = M.scostamenti(b.voci, n, cl);
+      h += '<h3>Budget e consuntivo</h3><div class="carta"><div class="scorri"><table><tr><th></th><th>Budget</th><th>Consuntivo</th><th>Scostamento</th></tr>' + sc.righe.map(function (x) { return '<tr><td>' + x.nome + '</td><td>' + eur(x.budget) + '</td><td>' + eur(x.consuntivo) + '</td><td class="' + (x.favorevole ? 'su' : 'giu') + '">' + eur(x.delta) + '</td></tr>'; }).join('') + '</table></div></div>';
+    }
+    return h + '<p class="muto">Le soglie usate nella diagnosi sono regole generali di prudenza, non medie di settore. Questo report è un supporto alle decisioni e non sostituisce il parere del commercialista.</p>';
   }
 
   // ------------------------------------------------------------ budget
@@ -463,6 +527,11 @@
         '<div class="campo"><label>Codice ATECO</label><input type="text" data-c="azCampo" data-k="ateco" value="' + esc(az.ateco || '') + '"></div></div>' +
         '<div class="riga" style="margin-top:12px"><button class="b p s" data-a="esportaJson">Esporta copia (JSON)</button><button class="b p peri" data-a="eliminaAzienda">Elimina azienda</button></div></div>';
       if (Arch.remoto() && az.ruolo === 'titolare') h += '<div class="carta"><h3 style="margin-top:0">Utenti dell\'azienda</h3><div id="membri" class="muto">Caricamento…</div><div class="riga" style="margin-top:8px"><div class="campo"><label>Email (già registrata)</label><input type="email" id="invEmail"></div><div class="campo"><label>Ruolo</label><select id="invRuolo"><option value="amministrazione">Amministrazione</option><option value="consulente">Consulente esterno</option><option value="sola_lettura">Sola lettura</option><option value="titolare">Titolare</option></select></div><button class="b p" data-a="invita">Aggiungi</button></div></div>';
+    }
+    if (az && MODULI.length) {
+      h += '<div class="carta"><h3 style="margin-top:0">Moduli operativi</h3><p class="muto">Attiva solo quelli che servono a questa azienda. Disattivare un modulo non cancella i suoi dati.</p>';
+      MODULI.forEach(function (m) { h += '<p><label style="display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:15px"><input type="checkbox" data-c="modulo" data-k="' + m.id + '"' + (moduloAttivo(m) ? ' checked' : '') + '><span><b>' + esc(m.titolo) + '</b><br><span class="muto">' + esc(m.descrizione || '') + '</span></span></label></p>'; });
+      h += '</div>';
     }
     h += '<div class="carta"><h3 style="margin-top:0">Importa un\'azienda da copia JSON</h3><label class="b p s" style="cursor:pointer">Scegli file<input type="file" accept=".json" data-c="fileJson" hidden></label></div>';
     h += '<div class="carta"><h3 style="margin-top:0">Dove salvare i dati</h3><p class="muto">Ogni installazione sceglie il proprio archivio. Lo schema del database è lo stesso per il cloud e per il server aziendale.</p>' +
@@ -630,13 +699,14 @@
     },
     generaSim: function () {
       var s = stato.simForm, az = Sim.genera({ settore: s.settore, profilo: s.profilo, ricavi: Number(s.ricavi), anni: Number(s.anni), seme: s.seme });
+      MODULI.forEach(function (m) { if (m.simula) m.simula(az, az.simulazione.seme); });
       delete az.id; // l'archivio assegna l'identificativo
       Arch.salva(az).then(function (salvata) { return apriAzienda(salvata.id); }).then(function () {
-        stato.esitoCollaudo = Sim.collauda(stato.az); stato.scheda = 'cruscotto'; disegna(); window.scrollTo(0, 0);
+        stato.esitoCollaudo = collaudaTutto(stato.az); stato.scheda = 'cruscotto'; disegna(); window.scrollTo(0, 0);
         toast('Creata ' + stato.az.nome + ' · collaudo ' + stato.esitoCollaudo.superati + '/' + stato.esitoCollaudo.totale);
       }).catch(function (e) { toast(e.message); });
     },
-    collauda: function () { stato.esitoCollaudo = Sim.collauda(stato.az); disegna(); },
+    collauda: function () { stato.esitoCollaudo = collaudaTutto(stato.az); disegna(); },
     massivo: function () { var t = Date.now(), m = Sim.collaudoMassivo(5); m.ms = Date.now() - t; stato.esitoMassivo = m; disegna(); },
     eliminaAzienda: function () {
       conferma('Eliminare definitivamente “' + stato.az.nome + '” e tutti i suoi dati?', 'Elimina').then(function (si) {
@@ -662,6 +732,7 @@
       if (navigator.serviceWorker) p.push(navigator.serviceWorker.getRegistrations().then(function (r) { return Promise.all(r.map(function (x) { return x.unregister(); })); }));
       Promise.all(p).then(function () { location.reload(); }, function () { location.reload(); });
     },
+    stampa: function () { try { window.print(); } catch (e) { toast('Stampa non disponibile in questa finestra'); } },
     controllaVersione: function () { controllaVersione(true); }
   };
 
@@ -699,6 +770,7 @@
       }).then(function (az) { stato.scheda = 'cruscotto'; return apriAzienda(az.id); }).then(function () { toast('Azienda importata'); }).catch(function (x) { toast('Importazione non riuscita: ' + x.message); });
     },
     azCampo: function (e) { stato.az[e.dataset.k] = e.value.trim().slice(0, 120) || (e.dataset.k === 'nome' ? stato.az.nome : ''); salva(); disegnaNav(); },
+    modulo: function (e) { stato.az.moduli = stato.az.moduli || {}; stato.az.moduli[e.dataset.k] = e.checked; salva(); disegnaNav(); },
     aTipo: function (e) { $('#aRemoto').style.display = e.value === 'locale' ? 'none' : ''; }
   };
 
@@ -746,5 +818,10 @@
     var p = Arch.remoto() ? Arch.utente().then(function (u) { stato.utente = u; }).catch(function (e) { toast(e.message); }) : Promise.resolve();
     p.then(function () { if (Arch.remoto() && !stato.utente) { disegna(); return; } return avviaDati(); });
   }
+  window.Timone = {
+    stato: stato, esc: esc, eur: eur, fmt: fmt, nf0: nf0, toast: toast, salva: salva, disegna: disegna, anni: anni, nDi: nDi, completo: completo,
+    selAnno: selAnno, scrivibile: scrivibile, chiedi: chiedi, conferma: conferma, chiudiDlg: chiudiDlg, scarica: scarica, numero: Imp.numero,
+    registra: function (m) { MODULI.push(m); Object.keys(m.azioni || {}).forEach(function (k) { AZIONI[k] = m.azioni[k]; }); Object.keys(m.cambi || {}).forEach(function (k) { CAMBI[k] = m.cambi[k]; }); if (stato.az) disegna(); }
+  };
   avvia();
 })();
