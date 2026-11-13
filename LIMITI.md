@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.6.0.
+Ultimo aggiornamento: versione 1.7.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -24,7 +24,7 @@ Ultimo aggiornamento: versione 1.6.0.
 | B1 | Bilanci in **PDF** non letti (né testo né scansione/OCR). | Lettore PDF + riconoscimento delle voci, con verifica sui totali. | 🔴 |
 | B2 | **Bilancio di verifica**, mastrini e libro giornale non importabili: manca la mappatura conto → voce. | Importazione con piano dei conti e regole di mappatura salvabili. | 🔴 |
 | B3 | Le soglie della diagnosi sono regole generali, non valori di settore. Nessun **benchmark** (bilanci depositati, ISTAT, ISA, codice ATECO). | Modulo benchmarking con fonti verificabili. | 🔴 |
-| B4 | La diagnosi non calcola costo dell'intervento, investimento necessario e tempo di recupero. | Modulo investimenti (VAN, TIR, payback). | 🔴 |
+| B4 | La diagnosi non calcola costo dell'intervento, investimento necessario e tempo di recupero. Dalla 1.7.0 il modulo Investimenti calcola VAN, TIR e recupero, ma va compilato a mano: le criticità della diagnosi non generano da sole una proposta di investimento. | Collegamento criticità → investimento precompilato (vedi V1). | 🟡 |
 | B5 | Scostamenti di budget: non separano effetto prezzo ed effetto volume. Budget solo economico (mancano finanziario, patrimoniale, investimenti). | Dati di vendita per quantità; budget di cassa. | 🔴 |
 | B6 | Scenari: un solo anno; non considerano investimenti, reazione dei clienti ai prezzi, limiti di capacità. Imposte con aliquota semplificata (effettiva dell'anno o 27,9%). | Pianificazione pluriennale (1-3-5-10 anni) con stato patrimoniale e cassa previsionali. | 🔴 |
 | B7 | Rendiconto finanziario ricostruito dalle variazioni di bilancio (stima). | Dati di cassa o rendiconto dell'azienda. | 🔴 |
@@ -104,6 +104,21 @@ Ultimo aggiornamento: versione 1.6.0.
 | P9 | Macchine e commesse si collegano a mano (una macchina ↔ una risorsa delle commesse); le registrazioni non sono legate alla singola commessa nei calcoli. | Collegamento per codice commessa. | 🔴 |
 | P10 | Con più prodotti sulla stessa macchina la performance è corretta solo se ogni riga ha il proprio tempo ciclo standard. | Anagrafica prodotti con tempi ciclo. | 🔴 |
 
+## V. Modulo Investimenti
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| V1 | **Risparmi e maggiori ricavi sono ipotesi inserite dall'utente**: il modulo non li stima dagli altri moduli (ad esempio il valore dei fermi evitati, dell'energia risparmiata o degli scarti ridotti) e non parte dalle criticità della diagnosi. | Proposte precompilate dai dati di produzione, energia, magazzino e commesse. | 🔴 |
+| V2 | Imposte con un'unica aliquota semplificata (27,9% iniziale, modificabile). Non sono considerati crediti d'imposta e agevolazioni sugli investimenti, la deducibilità effettiva di ammortamenti e interessi, l'IVA. Il risparmio d'imposta negli anni in perdita è considerato utilizzabile. | Regole fiscali aggiornate e verificate; modulo agevolazioni. | 🔴 |
+| V3 | Contributi a fondo perduto inseriti a mano e considerati incassati subito; nessuna ricerca di bandi e incentivi. | Modulo finanziamenti e agevolazioni. | 🔴 |
+| V4 | Finanziamento solo a rata annuale costante e tasso fisso: non gestiti leasing, preammortamento, tasso variabile, rate mensili, garanzie e costi accessori del prestito. | Estensione del piano di rimborso; modulo mutui. | 🔴 |
+| V5 | Rischio misurato solo con la sensibilità sui benefici e sul costo; nessuno scenario combinato né probabilità. | Scenari prudenziale / centrale / favorevole anche sugli investimenti. | 🔴 |
+| V6 | Benefici costanti o a crescita costante e pieni dal primo anno: niente avviamento graduale, capitale circolante aggiuntivo, inflazione, sostituzioni intermedie. | Benefici anno per anno. | 🔴 |
+| V7 | Nessuna **verifica a consuntivo** degli investimenti realizzati: lo stato «realizzato» è solo un'etichetta, i risultati effettivi non vengono misurati. | Confronto tra previsto e ottenuto sui dati degli anni successivi. | 🔴 |
+| V8 | Tasso di sconto unico per tutti gli investimenti, inserito dall'utente (8% iniziale): non è calcolato dal costo del capitale dell'azienda. | Calcolo del costo medio del capitale dai dati di bilancio. | 🟡 |
+| V9 | Effetto sui conti dell'azienda limitato al primo anno e a pochi indicatori (EBITDA, debito netto, utile, liquidità): non entra nel budget né negli scenari. | Pianificazione pluriennale (B6). | 🔴 |
+| V10 | Investimenti alternativi tra loro o collegati (uno esclude o richiede l'altro) non gestiti: la classifica li tratta come indipendenti. | Gruppi di alternative. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -123,5 +138,5 @@ Ultimo aggiornamento: versione 1.6.0.
 ## H. Moduli della specifica non ancora realizzati
 
 App mobile per dipendenti ·
-Investimenti e analisi di convenienza · Finanziamenti, mutui, bandi e agevolazioni · Decisioni produttive (produrre o fermare) ·
+Finanziamenti, mutui, bandi e agevolazioni · Decisioni produttive (produrre o fermare) ·
 Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.

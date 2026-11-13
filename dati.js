@@ -51,7 +51,7 @@
   function profiloDi(az) {
     return { settore: az.settore || '', forma: az.forma || '', ateco: az.ateco || '', simulata: !!az.simulata, simulazione: az.simulazione || null,
       classificazione: az.classificazione || {}, budget: az.budget || {}, scenari: az.scenari || {},
-      codiceFiscale: az.codiceFiscale || '', moduli: az.moduli || {}, commesse: az.commesse || null, magazzino: az.magazzino || null, personale: az.personale || null, energia: az.energia || null, produzione: az.produzione || null, vincoli: vincoliDi(az) };
+      codiceFiscale: az.codiceFiscale || '', moduli: az.moduli || {}, commesse: az.commesse || null, magazzino: az.magazzino || null, personale: az.personale || null, energia: az.energia || null, produzione: az.produzione || null, investimenti: az.investimenti || null, vincoli: vincoliDi(az) };
   }
   var Remoto = {
     elenco: function () {
@@ -74,7 +74,7 @@
           });
           return { id: a.id, nome: a.nome, settore: p.settore, forma: p.forma, ateco: p.ateco, simulata: !!p.simulata, simulazione: p.simulazione,
             classificazione: p.classificazione || {}, budget: p.budget || {}, scenari: p.scenari || {}, esercizi: (function () { Object.keys(p.vincoli || {}).forEach(function (a) { if (!esercizi[a]) esercizi[a] = { valori: {} }; esercizi[a].vincoli = p.vincoli[a]; }); return esercizi; })(),
-            codiceFiscale: p.codiceFiscale || '', moduli: p.moduli || {}, commesse: p.commesse || undefined, magazzino: p.magazzino || undefined, personale: p.personale || undefined, energia: p.energia || undefined, produzione: p.produzione || undefined,
+            codiceFiscale: p.codiceFiscale || '', moduli: p.moduli || {}, commesse: p.commesse || undefined, magazzino: p.magazzino || undefined, personale: p.personale || undefined, energia: p.energia || undefined, produzione: p.produzione || undefined, investimenti: p.investimenti || undefined,
             ruolo: (res[2][0] || {}).ruolo || 'sola_lettura',
             storico: res[1].reverse().map(function (s) { return { quando: s.quando, anno: s.anno, voce: s.voce, da: s.valore_prima === null ? null : Number(s.valore_prima), a: s.valore_dopo === null ? null : Number(s.valore_dopo), origine: s.origine, fonte: s.fonte }; }) };
         });

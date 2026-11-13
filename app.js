@@ -3,7 +3,7 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.6.0';
+  var VERSIONE = '1.7.0';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
@@ -121,7 +121,8 @@
     var m = $('#main');
     if (Arch.remoto() && !stato.utente && stato.scheda !== 'impostazioni') { m.innerHTML = vistaAccesso(); return; }
     if (!stato.az && ['collaudo', 'impostazioni'].indexOf(stato.scheda) < 0) { m.innerHTML = vistaBenvenuto(); return; }
-    if (stato.az && !anni().length && ['bilancio', 'collaudo', 'impostazioni'].indexOf(stato.scheda) < 0) {
+    var modSenza = MODULI.filter(function (x) { return x.id === stato.scheda && x.senzaEsercizi; })[0];   // moduli che funzionano anche senza bilanci
+    if (stato.az && !anni().length && !modSenza && ['bilancio', 'collaudo', 'impostazioni'].indexOf(stato.scheda) < 0) {
       m.innerHTML = '<h2>' + esc(stato.az.nome) + '</h2><div class="carta"><p>Non ci sono ancora esercizi. Inserisci o importa un bilancio per iniziare.</p><div class="riga"><button class="b" data-a="vai" data-scheda="bilancio" data-sub="dati">Vai al bilancio</button></div></div>';
       return;
     }
