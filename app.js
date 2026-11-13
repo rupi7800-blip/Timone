@@ -3,8 +3,8 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.0.0';
-  var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio;
+  var VERSIONE = '1.1.0';
+  var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
   var SCHEDE = [['cruscotto', 'Cruscotto'], ['bilancio', 'Bilancio'], ['indici', 'Indici'], ['diagnosi', 'Diagnosi'], ['budget', 'Budget'], ['scenari', 'Scenari'], ['collaudo', 'Simulazione'], ['impostazioni', 'Impostazioni']];
@@ -39,6 +39,7 @@
     var man = M.mancanti(nDi(anno) || {});
     return '<div class="avviso rosso">' + cosa + ' non disponibile per il ' + anno + ': mancano ' + man.length + ' voci di bilancio (' + esc(man.slice(0, 4).map(function (k) { return M.VOCE[k].nome; }).join('; ')) + (man.length > 4 ? '…' : '') + '). I vuoti non vengono trattati come zero.</div><button class="b" data-a="vai" data-scheda="bilancio" data-sub="dati">Completa il bilancio</button>';
   }
+  function normNome(t) { return String(t || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/\b(s\.?r\.?l\.?s?|s\.?p\.?a\.?|s\.?n\.?c\.?|s\.?a\.?s\.?|societa|a responsabilita limitata|per azioni)\b/g, '').replace(/[^a-z0-9]/g, ''); }
   function scrivibile() { return !stato.az || !stato.az.ruolo || stato.az.ruolo !== 'sola_lettura'; }
   function scarica(nome, testo, tipo) {
     var a = document.createElement('a');
@@ -103,7 +104,7 @@
   function vistaBenvenuto() {
     return '<h2>Benvenuto</h2>' +
       '<div class="carta"><h3 style="margin-top:0">Prova subito con un\'azienda simulata</h3><p class="muto">Crea un\'azienda di fantasia con bilanci coerenti su più anni: serve a vedere e collaudare tutte le funzioni senza usare dati reali.</p><button class="b" data-a="scheda" data-scheda="collaudo">Apri la simulazione</button></div>' +
-      '<div class="carta"><h3 style="margin-top:0">Azienda reale</h3><p class="muto">Crea l\'azienda e poi inserisci il bilancio a mano oppure importalo da Excel o CSV.</p><button class="b s" data-a="nuovaAzienda">Nuova azienda</button></div>';
+      '<div class="carta"><h3 style="margin-top:0">Azienda reale</h3><p class="muto">Carica il bilancio XBRL depositato al Registro delle Imprese (anche firmato .p7m): l\'azienda viene creata con i suoi dati. In alternativa creala vuota e inserisci il bilancio a mano o da Excel/CSV.</p><div class="riga"><label class="b" style="cursor:pointer">Da bilancio XBRL<input type="file" accept=".xbrl,.xml,.p7m" data-c="fileXbrlNuova" hidden></label><button class="b s" data-a="nuovaAzienda">Nuova azienda vuota</button></div></div>';
   }
   function vistaAccesso() {
     return '<h2>Accesso</h2><div class="carta"><p class="muto">I dati sono su un database remoto: serve un account.</p>' +
@@ -188,6 +189,16 @@
     h += bannerQualita(stato.anno);
     if (Math.abs(r.quadratura) > 1) h += '<div class="avviso rosso">Lo stato patrimoniale non quadra: attivo ' + eur(r.totale_attivo) + ', passivo e netto ' + eur(r.totale_passivo) + ' (differenza ' + eur(r.quadratura) + ').</div>';
     else if (!M.mancanti(n).length) h += '<div class="avviso ok">Attivo e passivo quadrano: ' + eur(r.totale_attivo) + '.</div>';
+    (stato.az.esercizi[stato.anno].vincoli || []).forEach(function (w, i) {
+      var fatto = w.voci.reduce(function (t, k) { return t + (n[k] || 0); }, 0), resto = w.totale - fatto, ok = Math.abs(resto) < 1;
+      var vuote = w.voci.filter(function (k) { return n[k] === undefined; });
+      h += '<div class="carta" style="border-left:5px solid ' + (ok ? 'var(--verde)' : 'var(--giallo)') + '"><h3 style="margin-top:0">' + esc(w.titolo) + ' da ripartire ' + (ok ? '<span class="tag ok">ripartiti</span>' : '<span class="tag giallo">da completare</span>') + '</h3>' +
+        '<p class="muto">' + esc(w.testo) + '</p><table><tr><td>Totale nel bilancio XBRL</td><td>' + eur(w.totale) + '</td></tr>' +
+        (w.entro !== null && w.entro !== undefined ? '<tr><td>di cui entro 12 mesi</td><td>' + eur(w.entro) + '</td></tr>' : '') + (w.oltre ? '<tr><td>di cui oltre 12 mesi</td><td>' + eur(w.oltre) + '</td></tr>' : '') +
+        '<tr><td>Già ripartito nelle voci</td><td>' + eur(fatto) + '</td></tr><tr class="tot"><td>Da ripartire</td><td>' + eur(resto) + '</td></tr></table>' +
+        (w.gruppo === 'debiti' && w.oltre ? '<p class="muto">Nel modello di Timone sono a medio-lungo termine solo i debiti verso banche oltre 12 mesi e gli altri debiti finanziari: la parte oltre 12 mesi di solito va lì.</p>' : '') +
+        (!ok && scrivibile() && vuote.length ? '<div class="riga" style="margin-top:8px"><select id="resto_' + i + '">' + vuote.map(function (k) { return '<option value="' + k + '">' + esc(M.VOCE[k].nome) + '</option>'; }).join('') + '</select><button class="b p s" data-a="assegnaResto" data-i="' + i + '">Assegna il resto (' + eur(resto) + ')</button></div><p class="muto">Inserisci prima le voci che conosci nei campi qui sotto, poi assegna il resto alla voce giusta.</p>' : '') + '</div>';
+    });
     var sez = { ce: 'Conto economico (i costi si inseriscono in positivo)', att: 'Stato patrimoniale · attivo', pas: 'Stato patrimoniale · passivo e netto', ges: 'Dati gestionali (non presenti nel bilancio)' };
     ['ce', 'att', 'pas', 'ges'].forEach(function (t) {
       h += '<div class="carta"><h3 style="margin-top:0">' + sez[t] + '</h3>';
@@ -251,25 +262,44 @@
     return h + '</table></div></div><p class="muto">Rendiconto ricostruito con il metodo indiretto dalle variazioni di stato patrimoniale: è una stima, non sostituisce il rendiconto redatto dall\'azienda. Una “differenza non spiegata” diversa da zero indica bilanci che non quadrano.</p>';
   }
   function bilImporta() {
-    var h = '<div class="carta"><h3 style="margin-top:0">Importa da Excel o CSV</h3><p class="muto">Una riga per voce, una colonna per anno. Scarica il modello, compilalo e ricaricalo. Le righe non riconosciute non vengono scartate né indovinate: le assegni tu.</p>' +
-      '<div class="riga"><button class="b p s" data-a="modello">Scarica il modello</button>' + (scrivibile() ? '<label class="b p" style="color:#fff;cursor:pointer">Scegli file<input type="file" accept=".csv,.txt,.xlsx,.xls" data-c="file" hidden></label>' : '') + '</div></div>';
+    var h = '<div class="carta"><h3 style="margin-top:0">Importa il bilancio XBRL</h3><p class="muto">Il file .xbrl depositato al Registro delle Imprese, anche nella versione firmata .p7m. Si leggono i prospetti di tutti gli anni presenti (di solito l\'esercizio e il precedente) e ogni voce viene controllata con i totali ufficiali del bilancio.</p>' +
+      (scrivibile() ? '<label class="b p" style="cursor:pointer">Scegli file XBRL<input type="file" accept=".xbrl,.xml,.p7m" data-c="file" hidden></label>' : '') + '</div>';
+    h += '<div class="carta"><h3 style="margin-top:0">Importa da Excel o CSV</h3><p class="muto">Una riga per voce, una colonna per anno. Scarica il modello, compilalo e ricaricalo. Le righe non riconosciute non vengono scartate né indovinate: le assegni tu.</p>' +
+      '<div class="riga"><button class="b p s" data-a="modello">Scarica il modello</button>' + (scrivibile() ? '<label class="b p" style="cursor:pointer">Scegli file<input type="file" accept=".csv,.txt,.xlsx,.xls" data-c="file" hidden></label>' : '') + '</div></div>';
     var im = stato.importazione;
     if (im) {
-      h += '<div class="carta"><h3 style="margin-top:0">Anteprima · ' + esc(im.nome) + '</h3>';
-      im.avvisi.forEach(function (a) { h += '<div class="avviso">' + esc(a) + '</div>'; });
+      h += '<div class="carta" id="anteprima"><h3 style="margin-top:0">Anteprima · ' + esc(im.nome) + '</h3>';
+      if (im.tipo === 'xbrl') {
+        var an = im.anagrafica || {};
+        h += '<p><b>' + esc(an.denominazione || 'Società senza denominazione') + '</b>' + (an.forma ? ' · ' + esc(an.forma) : '') + '<br><span class="muto">' + esc(im.descrizione) + (an.codiceFiscale ? ' · C.F. ' + esc(an.codiceFiscale) : '') + (an.ateco ? ' · ATECO ' + esc(an.ateco) : '') + '</span></p>';
+        if (stato.az && an.denominazione && stato.az.nome && !stato.az.daXbrl && normNome(stato.az.nome) !== normNome(an.denominazione)) h += '<div class="avviso rosso">Attenzione: il file riguarda “' + esc(an.denominazione) + '”, ma l\'azienda aperta è “' + esc(stato.az.nome) + '”. Verifica di aver scelto l\'azienda giusta.</div>';
+      }
+      im.avvisi.forEach(function (a, i) { var l = im.livelli ? im.livelli[i] : ''; h += '<div class="avviso ' + (l === 'rosso' ? 'rosso' : l === 'info' ? 'info' : '') + '">' + esc(a) + '</div>'; });
+      if (im.controlli) im.anni.forEach(function (a) {
+        var cc = im.controlli[a] || [], ko = cc.filter(function (c) { return !c.ok; }).length;
+        h += '<details><summary><span class="nome">Controlli ' + a + '</span><span class="tag ' + (ko ? 'rosso' : 'ok') + '">' + (cc.length - ko) + '/' + cc.length + ' superati</span></summary><div class="spiega">' +
+          cc.map(function (c) { return '<div class="esito ' + (c.ok ? 'ok' : 'ko') + '"><i>' + (c.ok ? '✓' : '✗') + '</i><div>' + esc(c.nome) + '<br><span class="muto">' + esc(c.dettaglio) + '</span></div></div>'; }).join('') + '</div></details>';
+      });
+      if (im.vincoli) Object.keys(im.vincoli).forEach(function (a) {
+        im.vincoli[a].forEach(function (w) { h += '<div class="avviso">' + a + ' · ' + esc(w.titolo) + ' ' + eur(w.totale) + (w.entro !== null && w.entro !== undefined ? ' (entro 12 mesi ' + eur(w.entro) + (w.oltre ? ', oltre ' + eur(w.oltre) : '') + ')' : '') + ': ' + esc(w.testo) + '</div>'; });
+      });
       if (!im.righe.length) h += '<p>Nessuna riga con valori numerici trovata.</p>';
       else {
         var opz = function (sel) { return '<option value="">— non importare —</option>' + M.VOCI.map(function (v) { return '<option value="' + v.id + '"' + (v.id === sel ? ' selected' : '') + '>' + esc(v.nome) + '</option>'; }).join(''); };
-        h += '<p class="muto">Anni trovati: ' + im.anni.join(', ') + ' · riconosciute ' + im.righe.filter(function (r) { return r.voce; }).length + ' righe su ' + im.righe.length + '.</p>';
+        h += '<p class="muto">Anni trovati: ' + im.anni.join(', ') + ' · ' + (im.tipo === 'xbrl' ? im.righe.length + ' voci lette' : 'riconosciute ' + im.righe.filter(function (r) { return r.voce; }).length + ' righe su ' + im.righe.length) + '.</p>';
         im.righe.forEach(function (r, i) {
-          h += '<div class="voce" style="grid-template-columns:1fr"><div><b>' + esc(r.etichetta) + '</b> <span class="muto">' + im.anni.map(function (a) { return r.valori[a] === undefined ? '' : a + ': ' + nf0.format(r.valori[a]); }).filter(Boolean).join(' · ') + '</span></div><select data-c="assegna" data-i="' + i + '">' + opz(r.voce) + '</select></div>';
+          var dett = im.anni.map(function (a) { return r.valori[a] === undefined ? '' : a + ': ' + nf0.format(r.valori[a]); }).filter(Boolean).join(' · ');
+          if (im.tipo === 'xbrl') {
+            h += '<div class="voce" style="grid-template-columns:1fr"><div><b>' + esc(r.etichetta) + '</b> ' + (r.zero ? '<span class="tag">assente nel file = 0</span>' : '') + '<br><span class="muto">' + dett + '</span>' +
+              (r.elementi && r.elementi.length ? '<br><span class="muto" style="font-size:12px;word-break:break-all">' + esc(r.elementi.join(' + ')) + '</span>' : '') + (r.nota ? '<br><span class="muto">' + esc(r.nota) + '</span>' : '') + '</div></div>';
+          } else h += '<div class="voce" style="grid-template-columns:1fr"><div><b>' + esc(r.etichetta) + '</b> <span class="muto">' + dett + '</span></div><select data-c="assegna" data-i="' + i + '">' + opz(r.voce) + '</select></div>';
         });
         h += '<div class="riga" style="margin-top:12px"><button class="b" data-a="confermaImport">Importa</button><button class="b s" data-a="annullaImport">Annulla</button></div>';
       }
       h += '</div>';
     }
     h += '<div class="carta"><h3 style="margin-top:0">Esporta</h3><div class="riga"><button class="b p s" data-a="esportaCsv">Bilanci in CSV</button><button class="b p s" data-a="esportaJson">Azienda completa (JSON)</button></div><p class="muto">Il file JSON contiene tutto (dati, storico, budget, scenari) e si può reimportare da Impostazioni: serve per copie di sicurezza e per spostare un\'azienda da un archivio all\'altro.</p></div>';
-    h += '<div class="carta"><h3 style="margin-top:0">Altri formati</h3><p class="muto">Bilancio XBRL, PDF con riconoscimento del testo e bilancio di verifica dal gestionale sono previsti ma non ancora attivi: per ciascuno serve almeno un file reale di esempio su cui costruire e verificare la lettura.</p></div>';
+    h += '<div class="carta"><h3 style="margin-top:0">Altri formati</h3><p class="muto">PDF con riconoscimento del testo e bilancio di verifica dal gestionale sono previsti ma non ancora attivi.</p></div>';
     return h;
   }
   function bilStorico() {
@@ -462,7 +492,7 @@
   function dialogoAziende() {
     Arch.elenco().then(function (el) {
       var h = '<h3 style="margin-top:0">Aziende</h3><div class="lista">' + (el.length ? el.map(function (a) { return '<button data-a="apri" data-id="' + esc(a.id) + '"><span style="flex:1">' + esc(a.nome) + '</span>' + (a.simulata ? '<span class="tag simulato">simulata</span>' : '') + (a.ruolo && a.ruolo !== 'titolare' ? '<span class="tag">' + esc(a.ruolo) + '</span>' : '') + '</button>'; }).join('') : '<p class="muto">Nessuna azienda.</p>') + '</div>' +
-        '<div class="riga" style="margin-top:14px"><button class="b" data-a="nuovaAzienda">Nuova azienda</button><button class="b s" data-a="vai" data-scheda="collaudo">Azienda simulata</button><span class="sp"></span><button class="b s" data-a="chiudi">Chiudi</button></div>';
+        '<div class="riga" style="margin-top:14px"><button class="b" data-a="nuovaAzienda">Nuova azienda</button><label class="b s" style="cursor:pointer">Da XBRL<input type="file" accept=".xbrl,.xml,.p7m" data-c="fileXbrlNuova" hidden></label><button class="b s" data-a="vai" data-scheda="collaudo">Azienda simulata</button><span class="sp"></span><button class="b s" data-a="chiudi">Chiudi</button></div>';
       $('#dlgCorpo').innerHTML = h; $('#dlg').showModal();
     }).catch(function (e) { toast(e.message); });
   }
@@ -496,8 +526,16 @@
     return true;
   }
   function caricaScript(src) { return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { ko(new Error('Lettore Excel non disponibile (serve la connessione). In alternativa salva il file come CSV.')); }; document.head.appendChild(s); }); }
+  function xbrlDa(file) {
+    return file.arrayBuffer().then(function (buf) { return X.righeImport(X.leggi(new Uint8Array(buf)), file.name); });
+  }
   function leggiFile(file) {
     var nome = file.name;
+    if (/\.(xbrl|xml|p7m)$/i.test(nome)) {
+      xbrlDa(file).then(function (r) { stato.importazione = r; disegna(); var e = document.getElementById('anteprima'); if (e) e.scrollIntoView(); })
+        .catch(function (e) { toast('XBRL non letto: ' + e.message); });
+      return;
+    }
     var fine = function (matrice) { var r = Imp.interpreta(matrice); r.nome = nome; stato.importazione = r; disegna(); };
     if (/\.xlsx?$/i.test(nome)) {
       (window.XLSX ? Promise.resolve() : caricaScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js')).then(function () { return file.arrayBuffer(); }).then(function (buf) {
@@ -542,8 +580,15 @@
       Object.keys(val).forEach(function (v) { if (val[v].origine !== 'simulato' && val[v].stato !== 'verificato') { val[v].stato = 'verificato'; k++; } });
       salva(); disegna(); toast(k ? k + ' valori segnati come verificati' : 'Niente da verificare');
     },
+    assegnaResto: function (d) {
+      var w = stato.az.esercizi[stato.anno].vincoli[Number(d.i)], n = nDi(stato.anno), voce = $('#resto_' + d.i).value;
+      var resto = w.totale - w.voci.reduce(function (t, k) { return t + (n[k] || 0); }, 0);
+      if (impostaValore(voce, String(Math.round(resto * 100) / 100).replace('.', ','))) { salva(); disegna(); toast('Assegnati ' + eur(resto) + ' a ' + M.VOCE[voce].nome); }
+    },
     azzeraMancanti: function () {
-      var man = M.mancanti(nDi(stato.anno));
+      var daRipartire = []; (stato.az.esercizi[stato.anno].vincoli || []).forEach(function (w) { daRipartire = daRipartire.concat(w.voci); });
+      var man = M.mancanti(nDi(stato.anno)).filter(function (k) { return daRipartire.indexOf(k) < 0; });
+      if (!man.length) { toast('Restano solo voci da ripartire dal totale del bilancio'); return; }
       conferma('Confermi che le ' + man.length + ' voci vuote del ' + stato.anno + ' valgono zero? Fallo solo se quelle voci nel bilancio non esistono davvero.', 'Valgono zero').then(function (si) {
         if (!si) return;
         man.forEach(function (k) { impostaValore(k, '0'); });
@@ -558,7 +603,13 @@
     esportaCsv: function () { scarica('timone-' + stato.az.nome.replace(/[^\w]+/g, '-') + '.csv', '﻿' + Imp.esportaCsv(stato.az), 'text/csv;charset=utf-8'); },
     esportaJson: function () { scarica('timone-' + stato.az.nome.replace(/[^\w]+/g, '-') + '.json', JSON.stringify({ formato: 'timone-azienda', versione: 1, azienda: stato.az }, null, 1), 'application/json'); },
     confermaImport: function () {
-      var k = Imp.applica(stato.az, stato.importazione, stato.importazione.nome);
+      var im = stato.importazione, k = Imp.applica(stato.az, im, im.nome);
+      if (im.tipo === 'xbrl' && im.anagrafica) {
+        if (!stato.az.ateco && im.anagrafica.ateco) stato.az.ateco = im.anagrafica.ateco;
+        if (!stato.az.forma && im.anagrafica.forma) stato.az.forma = im.anagrafica.forma;
+        if (!stato.az.codiceFiscale && im.anagrafica.codiceFiscale) stato.az.codiceFiscale = im.anagrafica.codiceFiscale;
+        delete stato.az.daXbrl;
+      }
       stato.importazione = null; var a = anni(); if (a.length) stato.anno = a[a.length - 1];
       salva(); stato.sub = 'dati'; disegna(); toast(k + ' valori importati: restano “da verificare”');
     },
@@ -625,7 +676,20 @@
       stato.az.scenari[k][e.dataset.leva] = Number(e.value) / 100; salva(); var y = window.scrollY; disegna(); window.scrollTo(0, y);
     },
     assegna: function (e) { stato.importazione.righe[Number(e.dataset.i)].voce = e.value || null; },
-    file: function (e) { if (e.files[0]) leggiFile(e.files[0]); },
+    file: function (e) { if (e.files[0]) leggiFile(e.files[0]); e.value = ''; },
+    fileXbrlNuova: function (e) {
+      var f = e.files[0]; if (!f) return; e.value = '';
+      var lettura;
+      xbrlDa(f).then(function (r) {
+        lettura = r; chiudiDlg();
+        var az = nuovaAziendaVuota((r.anagrafica.denominazione || f.name.replace(/\.[^.]+$/, '')).slice(0, 120));
+        az.daXbrl = true;
+        return Arch.salva(az);
+      }).then(function (az) { return apriAzienda(az.id); }).then(function () {
+        stato.importazione = lettura; stato.scheda = 'bilancio'; stato.sub = 'importa'; disegna();
+        var e2 = document.getElementById('anteprima'); if (e2) e2.scrollIntoView();
+      }).catch(function (x) { toast('XBRL non letto: ' + x.message); });
+    },
     fileJson: function (e) {
       if (!e.files[0]) return;
       e.files[0].text().then(function (t) {

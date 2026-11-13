@@ -132,12 +132,21 @@
         if (!azienda.esercizi[anno]) azienda.esercizi[anno] = { valori: {} };
         var vecchio = azienda.esercizi[anno].valori[r.voce];
         azienda.storico = azienda.storico || [];
-        azienda.storico.push({ quando: adesso, anno: Number(anno), voce: r.voce, da: vecchio ? vecchio.v : null, a: r.valori[anno], origine: 'importato', fonte: nomeFile });
-        azienda.esercizi[anno].valori[r.voce] = { v: r.valori[anno], origine: 'importato', fonte: nomeFile, acquisito: adesso, stato: 'da verificare' };
+        var fonte = r.fonte || nomeFile;
+        azienda.storico.push({ quando: adesso, anno: Number(anno), voce: r.voce, da: vecchio ? vecchio.v : null, a: r.valori[anno], origine: 'importato', fonte: fonte });
+        azienda.esercizi[anno].valori[r.voce] = { v: r.valori[anno], origine: 'importato', fonte: fonte, acquisito: adesso, stato: 'da verificare' };
         scritti++;
       });
     });
-    if (azienda.storico.length > 1000) azienda.storico = azienda.storico.slice(-1000);
+    // vincoli di ripartizione (bilanci XBRL abbreviati e micro): sostituiscono quelli precedenti degli stessi anni
+    if (risultato.vincoli) Object.keys(risultato.vincoli).forEach(function (anno) {
+      if (!azienda.esercizi[anno]) azienda.esercizi[anno] = { valori: {} };
+      azienda.esercizi[anno].vincoli = risultato.vincoli[anno];
+    });
+    if (risultato.tipo === 'xbrl' && risultato.anni) risultato.anni.forEach(function (anno) {
+      if (azienda.esercizi[anno] && !(risultato.vincoli && risultato.vincoli[anno])) delete azienda.esercizi[anno].vincoli;
+    });
+    if (azienda.storico && azienda.storico.length > 1000) azienda.storico = azienda.storico.slice(-1000);
     return scritti;
   }
 
