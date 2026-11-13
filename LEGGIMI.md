@@ -1,6 +1,8 @@
 # Timone · piattaforma di controllo e analisi aziendale
 
-Versione 1.3.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità** e **Magazzino e scorte**.
+Versione 1.4.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**.
+
+Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [LIMITI.md](LIMITI.md).
 "Timone" è un nome di lavoro: si cambia in `index.html` e `manifest.json`.
 
 ## Cosa fa oggi
@@ -17,6 +19,7 @@ Versione 1.3.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **repor
 - **Report** dell'esercizio (bilancio riclassificato, rendiconto, indici, criticità, budget) da stampare o salvare in PDF.
 - **Modulo Commesse e marginalità** (attivabile per azienda): costo diretto di ogni commessa da materiali, ore di lavoro, ore macchina, energia (kWh misurati oppure stimati da potenza × fattore di carico × ore, sempre etichettati), lavorazioni esterne e trasporti; preventivo e consuntivo; costo e prezzo per unità; costi indiretti ricavati dal bilancio e ribaltati con criterio a scelta; analisi per cliente e per prodotto; **riconciliazione** tra dati gestionali e contabilità fino al risultato operativo; criticità (commesse in perdita, sotto soglia, preventivi superati, scarti, dipendenza da un cliente) riportate anche nella Diagnosi.
 - **Modulo Magazzino e scorte** (attivabile per azienda): inventario per articolo importato da Excel/CSV o inserito a mano; ogni articolo è classificato come regolare, in eccesso, fermo, obsoleto o sotto scorta in base a consumi, copertura e data dell'ultimo movimento (se i dati non bastano resta "dati incompleti", non viene indovinato); capitale immobilizzato e suo costo finanziario, capitale liberabile, classi ABC, elenco dei riordini con quantità proposte, confronto con le rimanenze di bilancio; criticità riportate in Diagnosi e nel Report.
+- **Modulo Personale** (attivabile per azienda): riepilogo annuale per persona importato da Excel/CSV o inserito a mano; costo aziendale effettivo (retribuzione, contributi, TFR, INAIL, premi, benefit, formazione), costo per ora lavorata per reparto, quota di straordinari e assenze, diretti e indiretti; produttività (ricavi e valore aggiunto per persona e per ora); confronto con il costo del personale di bilancio e con i costi orari usati nelle commesse; simulazioni «conviene assumere?», «straordinari o una persona in più?», «conviene esternalizzare?». Contributi e TFR non inseriti sono calcolati ed etichettati. Nessuna graduatoria individuale.
 - **Simulazione generale**: generatore di aziende di fantasia (5 settori × 6 situazioni, riproducibili con un seme), collaudo dell'azienda aperta e collaudo massivo del motore.
 - Aggiornamento: l'app resta sulla versione installata finché non si preme "Aggiorna" (compare solo se `versione.json` indica una versione più recente).
 
@@ -34,10 +37,12 @@ Regole applicate ovunque: nessun dato inventato, i vuoti non valgono zero, le st
 | `xbrl.js` | lettura dei bilanci XBRL e dei file firmati `.p7m` |
 | `commesse.js`, `ui-commesse.js` | modulo Commesse: calcolo (funzioni pure) e interfaccia |
 | `magazzino.js`, `ui-magazzino.js` | modulo Magazzino: calcolo, importazione e interfaccia |
+| `personale.js`, `ui-personale.js` | modulo Personale: calcolo, simulazioni, importazione e interfaccia |
+| `LIMITI.md` | registro dei limiti aperti |
 | `dati.js` | archivio: dispositivo, Supabase cloud, server aziendale |
 | `supabase-setup.sql` | schema del database con isolamento per azienda |
 | `sw.js`, `manifest.json`, `icona.svg`, `versione.json` | installazione e aggiornamenti |
-| `test.js`, `test-xbrl.js`, `test-commesse.js`, `test-magazzino.js` | test automatici: `node test.js`, `node test-xbrl.js`, `node test-commesse.js`, `node test-magazzino.js` |
+| `test.js`, `test-xbrl.js`, `test-commesse.js`, `test-magazzino.js`, `test-personale.js` | test automatici, uno per file: `node test.js` ecc. |
 
 ## Pubblicazione
 
@@ -61,18 +66,13 @@ Il nucleo non va modificato: la scheda compare da sola, le criticità entrano ne
 
 - Motore: 43 test su un caso calcolato a mano + 7.680 controlli su 240 aziende simulate, tutti superati.
 - Commesse: 29 test su un caso calcolato a mano + 1.620 controlli su 90 aziende con commesse simulate (quadratura con l'EBIT, ribaltamento integrale, costi attribuiti entro il bilancio), tutti superati.
+- Personale: 39 test (costi, produttività e simulazioni calcolati a mano, importazione) + 1.440 controlli su 90 aziende con personale simulato, tutti superati.
 - Magazzino: 33 test (classificazione calcolata a mano, importazione con numeri e date italiani) + 1.500 controlli su 75 aziende con inventario simulato, tutti superati.
 - XBRL: 225 test su bilanci generati da aziende simulate (ordinario, abbreviato, micro, `.p7m` in tre codifiche, totali alterati, voci mancanti) e prova su un bilancio micro reale depositato: tutti i controlli sui totali ufficiali superati.
 - Interfaccia: percorso completo provato in un browser a dimensione telefono (archivio sul dispositivo).
 - Database: schema, isolamento tra aziende, ruoli e storico provati su PostgreSQL 16 con autenticazione simulata.
 - **Non ancora provato**: il collegamento dell'app a un progetto Supabase reale (accesso, lettura, salvataggio). Va verificato al primo collegamento.
 
-## Non ancora presente (prossimi passi)
+## Non ancora presente
 
-- Lettura di PDF e bilanci di verifica.
-- XBRL: numero dei dipendenti e dettaglio dei debiti dalla nota integrativa (oggi si leggono solo i prospetti); la firma digitale dei `.p7m` non viene verificata.
-- Abbonamenti e pagamenti, condizioni contrattuali, informativa privacy e nomina a responsabile del trattamento.
-- Motore AI conversazionale (predisposto: il motore di calcolo espone già dati, formule e affidabilità da passare al modello).
-- Commesse: importazione da file, rilevazione delle ore dall'app per dipendenti, dati per macchina (fermi, OEE).
-- Magazzino: movimenti nel tempo (oggi si lavora su inventari a una data), lotti e scadenze, ricerca di fornitori alternativi.
-- Moduli operativi successivi: personale, energia e utenze, produzione; app per dipendenti; benchmark di settore.
+Vedi [LIMITI.md](LIMITI.md): è l'elenco completo e aggiornato.

@@ -3,7 +3,7 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.3.0';
+  var VERSIONE = '1.4.0';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
@@ -74,12 +74,16 @@
   var timerSalva = null;
   function salva(subito) {
     if (!stato.az) return Promise.resolve();
-    clearTimeout(timerSalva);
-    var fai = function () { return Arch.salva(stato.az).catch(function (e) { toast('Salvataggio non riuscito: ' + e.message); }); };
+    clearTimeout(timerSalva); timerSalva = null;
+    var fai = function () { timerSalva = null; return Arch.salva(stato.az).catch(function (e) { toast('Salvataggio non riuscito: ' + e.message); }); };
     if (subito) return fai();
     timerSalva = setTimeout(fai, 500);
     return Promise.resolve();
   }
+  // se la pagina viene chiusa o messa in secondo piano con un salvataggio in attesa, lo si esegue subito
+  function salvaInSospeso() { if (timerSalva && stato.az) salva(true); }
+  window.addEventListener('pagehide', salvaInSospeso);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') salvaInSospeso(); });
 
   // qualità dei dati dell'esercizio: decide il livello di affidabilità mostrato accanto alle analisi
   function qualita(anno) {
