@@ -3,7 +3,7 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.11.0';
+  var VERSIONE = '1.12.0';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 

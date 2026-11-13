@@ -1,6 +1,6 @@
 # Timone · piattaforma di controllo e analisi aziendale
 
-Versione 1.11.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**, **Finanziamenti e agevolazioni**, **Commerciale**, **Confronti e ISA**.
+Versione 1.12.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**, **Finanziamenti e agevolazioni**, **Commerciale**, **Confronti e ISA**, **Piano pluriennale**.
 
 Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [LIMITI.md](LIMITI.md).
 "Timone" è un nome di lavoro: si cambia in `index.html` e `manifest.json`.
@@ -27,6 +27,7 @@ Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [
 - **Modulo Finanziamenti, mutui e agevolazioni** (attivabile per azienda): mutui e prestiti (rata costante, quota capitale costante, capitale alla scadenza, preammortamento, rate mensili o periodiche), leasing e fidi; piano di rimborso, costo totale e tasso effettivo con le spese; a fine esercizio o a oggi: debito residuo, quota entro e oltre 12 mesi, rate dei 12 mesi successivi, tasso medio, effetto di un punto di tasso in più; confronto con debiti e interessi di bilancio e copertura delle rate con l'EBITDA; confronto tra offerte sul tasso effettivo; simulazione di estinzione anticipata e rinegoziazione; **registro delle agevolazioni** con fonte, data di verifica, termine e requisiti (Timone non cerca bandi e non ne inventa).
 - **Modulo Commerciale** (attivabile per azienda): vendite per cliente e per mese importate da Excel/CSV o inserite a mano; ricavi, margine e quota di ogni cliente, classi ABC, concentrazione; clienti nuovi, persi, in calo e fermi; mantenimento dei ricavi; stagionalità; settori, zone e famiglie di prodotto più redditizi («dove cercare nuovi clienti», senza inventare nominativi); tempi di pagamento e costo del ritardo; confronto con i ricavi di bilancio; **trattative** con valore, probabilità, fase, chiusura prevista e fonte del contatto, valore ponderato e tasso di successo; simulazioni «e se perdessi questo cliente?» e «quanto costa uno sconto?».
 - **Modulo Confronti e ISA** (attivabile per azienda): confronto di 20 indici con i **bilanci depositati dei concorrenti** (file XBRL, anche abbreviati) e con riferimenti di settore inseriti a mano con la loro fonte; per ogni indice mediana, minimo e massimo, posizione dell'azienda, punti di forza e di debolezza e, dove ha senso, valore in euro dello scarto. Timone non contiene medie di settore e non ne inventa: senza fonte un riferimento non entra nel confronto. **ISA**: registro dei punteggi della dichiarazione (non calcolati da Timone) con il livello di benefici premiali secondo le soglie del provvedimento dell'Agenzia delle Entrate n. 123160/2026.
+- **Modulo Piano pluriennale** (attivabile per azienda): dall'ultimo bilancio completo proietta a 1, 3, 5 o 10 anni conto economico, stato patrimoniale e flussi di cassa con ipotesi dichiarate (volumi, prezzi, costi, giorni di incasso, scorta e pagamento, investimenti, nuovi finanziamenti, dividendi, aumenti di capitale); i rimborsi dei debiti esistenti arrivano dal modulo Finanziamenti; ogni anno previsto è un bilancio che quadra; segnala l'anno in cui servirebbe nuova finanza, le rate non sarebbero coperte o il patrimonio netto diventerebbe negativo; piani a confronto, varianti prudenziale e favorevole, crescita necessaria per un utile obiettivo.
 - **Simulazione generale**: generatore di aziende di fantasia (5 settori × 6 situazioni, riproducibili con un seme), collaudo dell'azienda aperta e collaudo massivo del motore.
 - Aggiornamento: l'app resta sulla versione installata finché non si preme "Aggiorna" (compare solo se `versione.json` indica una versione più recente).
 
@@ -52,6 +53,7 @@ Regole applicate ovunque: nessun dato inventato, i vuoti non valgono zero, le st
 | `finanziamenti.js`, `ui-finanziamenti.js` | modulo Finanziamenti, mutui e agevolazioni: calcolo e interfaccia |
 | `commerciale.js`, `ui-commerciale.js` | modulo Commerciale: calcolo, importazione e interfaccia |
 | `benchmark.js`, `ui-benchmark.js` | modulo Confronti e ISA: calcolo e interfaccia |
+| `piano.js`, `ui-piano.js` | modulo Piano pluriennale: calcolo e interfaccia |
 | `LIMITI.md` | registro dei limiti aperti |
 | `dati.js` | archivio: dispositivo, Supabase cloud, server aziendale |
 | `supabase-setup.sql` | schema del database con isolamento per azienda |
@@ -80,6 +82,7 @@ Il nucleo non va modificato: la scheda compare da sola, le criticità entrano ne
 
 - Motore: 43 test su un caso calcolato a mano + 7.680 controlli su 240 aziende simulate, tutti superati.
 - Commesse: 29 test su un caso calcolato a mano + 1.620 controlli su 90 aziende con commesse simulate (quadratura con l'EBIT, ribaltamento integrale, costi attribuiti entro il bilancio), tutti superati.
+- Piano pluriennale: 73 test (due anni di piano calcolati a mano voce per voce, investimenti, finanziamenti, liquidità minima, dividendi) + 990 controlli su 90 aziende con piani simulati (quadratura e rendiconto di ogni anno previsto), tutti superati.
 - Confronti e ISA: 46 test (mediana, posizione, giudizi, valore dello scarto, bilanci abbreviati, soglie ISA calcolati a mano) + 810 controlli su 90 aziende con concorrenti simulati, tutti superati.
 - Commerciale: 80 test (quote, margini, movimenti dei clienti, pagamenti, trattative e simulazioni calcolati a mano, importazione) + 1.170 controlli su 90 aziende con vendite simulate, tutti superati.
 - Finanziamenti: 88 test (piani, tasso effettivo, situazione a una data, estinzione, rinegoziazione e agevolazioni calcolati a mano) + 1.260 controlli su 90 aziende con finanziamenti simulati, tutti superati.

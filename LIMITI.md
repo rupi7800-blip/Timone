@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.11.0.
+Ultimo aggiornamento: versione 1.12.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -27,7 +27,7 @@ Ultimo aggiornamento: versione 1.11.0.
 | B3 | Le soglie della diagnosi sono regole generali, non valori di settore. Dalla 1.11.0 il modulo Confronti permette di confrontarsi con i bilanci dei concorrenti e con riferimenti di cui si indica la fonte, ma Timone non contiene dati di settore propri e la diagnosi non usa ancora i confronti per le sue soglie. | Banca dati di bilanci per codice ATECO (vedi T1); soglie della diagnosi ricavate dai confronti. | 🟡 |
 | B4 | La diagnosi non calcola costo dell'intervento, investimento necessario e tempo di recupero. Dalla 1.7.0 il modulo Investimenti calcola VAN, TIR e recupero, ma va compilato a mano: le criticità della diagnosi non generano da sole una proposta di investimento. | Collegamento criticità → investimento precompilato (vedi V1). | 🟡 |
 | B5 | Scostamenti di budget: non separano effetto prezzo ed effetto volume. Budget solo economico (mancano finanziario, patrimoniale, investimenti). | Dati di vendita per quantità; budget di cassa. | 🔴 |
-| B6 | Scenari: un solo anno; non considerano investimenti, reazione dei clienti ai prezzi, limiti di capacità. Imposte con aliquota semplificata (effettiva dell'anno o 27,9%). | Pianificazione pluriennale (1-3-5-10 anni) con stato patrimoniale e cassa previsionali. | 🔴 |
+| B6 | La scheda Scenari resta su un solo anno. Dalla 1.12.0 il modulo Piano proietta fino a 10 anni conto economico, stato patrimoniale e cassa, con investimenti e finanziamenti; restano non considerati la reazione dei clienti ai prezzi e i limiti di capacità (vedi sezione U). Imposte con aliquota semplificata. | Vedi U3, U5. | 🟡 |
 | B7 | Rendiconto finanziario ricostruito dalle variazioni di bilancio (stima). | Dati di cassa o rendiconto dell'azienda. | 🔴 |
 | B8 | DSO e DPO sovrastimati perché crediti e debiti includono l'IVA; usano i saldi di fine anno. | Aliquota IVA media o scadenziario. | 🔴 |
 | B9 | Nel bilancio abbreviato la quota a breve dei debiti va inserita a mano (ripartizione assistita, non automatica). | Nota integrativa o bilancio di verifica (vedi B2, C2). | 🟡 |
@@ -117,7 +117,7 @@ Ultimo aggiornamento: versione 1.11.0.
 | V6 | Benefici costanti o a crescita costante e pieni dal primo anno: niente avviamento graduale, capitale circolante aggiuntivo, inflazione, sostituzioni intermedie. | Benefici anno per anno. | 🔴 |
 | V7 | Nessuna **verifica a consuntivo** degli investimenti realizzati: lo stato «realizzato» è solo un'etichetta, i risultati effettivi non vengono misurati. | Confronto tra previsto e ottenuto sui dati degli anni successivi. | 🔴 |
 | V8 | Tasso di sconto unico per tutti gli investimenti, inserito dall'utente (8% iniziale): non è calcolato dal costo del capitale dell'azienda. | Calcolo del costo medio del capitale dai dati di bilancio. | 🟡 |
-| V9 | Effetto sui conti dell'azienda limitato al primo anno e a pochi indicatori (EBITDA, debito netto, utile, liquidità): non entra nel budget né negli scenari. | Pianificazione pluriennale (B6). | 🔴 |
+| V9 | L'effetto di un investimento sui conti dell'azienda è limitato al primo anno e a pochi indicatori. Dalla 1.12.0 il modulo Piano gestisce investimenti e finanziamenti su più anni, ma vanno reinseriti lì a mano e i risparmi attesi non vengono trasferiti. | Collegamento Investimenti → Piano (U4). | 🟡 |
 | V10 | Investimenti alternativi tra loro o collegati (uno esclude o richiede l'altro) non gestiti: la classifica li tratta come indipendenti. | Gruppi di alternative. | 🔴 |
 
 ## Q. Modulo Decisioni produttive («Produrre o fermare?»)
@@ -188,6 +188,22 @@ Ultimo aggiornamento: versione 1.11.0.
 | T10 | **Il punteggio ISA non è calcolato** e non si può simulare come migliorarlo (richiederebbe le formule di ogni ISA): si registra il punteggio della dichiarazione. I file della dichiarazione non vengono letti. | Formule ISA per codice attività, verificate; lettura del file telematico. | 🔴 |
 | T11 | Le soglie ISA nel codice sono quelle del provvedimento n. 123160/2026 (periodo d'imposta 2025): vanno aggiornate a mano ogni anno; per gli altri anni compare un avviso. I singoli benefici e i loro limiti non sono elencati; più attività soggette a ISA non sono gestite. | Tabella delle soglie per anno, verificata sui provvedimenti. | 🔴 |
 
+## U. Modulo Piano pluriennale
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| U1 | **Ipotesi uguali per tutti gli anni** (stessa crescita e stessa inflazione ogni anno): non si possono dare valori diversi anno per anno. Il piano è annuale: nessuna stagionalità né previsione di cassa mese per mese. | Ipotesi per anno; piano di cassa mensile (B10). | 🔴 |
+| U2 | Crescita, prezzi e costi sono **ipotesi dell'utente**: Timone non le stima e non usa previsioni di mercato. Le varianti prudenziale e favorevole sono scostamenti fissi (±3 punti di volumi, ±1 di prezzi e costi), senza probabilità. | Fonti di previsione verificabili; scostamenti impostabili. | 🔴 |
+| U3 | **Limiti di capacità non considerati**: i volumi crescono senza verificare se macchine e personale bastano; il personale cresce solo per la quota variabile impostata; la reazione dei clienti ai prezzi non è stimata. | Collegamento con Produzione e Personale; vendite per quantità e prezzo. | 🔴 |
+| U4 | Investimenti e nuovi finanziamenti si scrivono a mano nel piano (una riga ciascuno): non arrivano dai moduli Investimenti e Finanziamenti (da quest'ultimo arrivano solo i rimborsi dei debiti esistenti). I risparmi attesi da un investimento vanno tradotti a mano nelle ipotesi sui costi. | Collegamento tra i moduli. | 🔴 |
+| U5 | Fiscalità semplificata: un'aliquota unica sul risultato positivo, pagata nell'anno. Non considera perdite riportabili, acconti e saldi, IRAP calcolata a parte, crediti d'imposta, IVA. | Regole fiscali verificate con un commercialista. | 🔴 |
+| U6 | Debiti: la quota dei mutui in scadenza entro 12 mesi non è separata (gli indici di liquidità del piano non sono affidabili); nuovi finanziamenti solo a quote capitale uguali annuali; interessi calcolati sui saldi di inizio anno; il debito a breve copre qualsiasi fabbisogno senza verificare i fidi disponibili; la liquidità in eccesso non rende. | Collegamento completo con il modulo Finanziamenti. | 🔴 |
+| U7 | Capitale circolante: variano solo scorte, clienti e fornitori (per giorni); le altre voci restano ferme; il TFR segue il costo del personale; tutte le scorte sono trattate come materie. | Regole per voce. | 🔴 |
+| U8 | Gli ammortamenti dei beni esistenti restano costanti fino a esaurirsi: il rinnovo degli impianti non è previsto in automatico (compare solo un avviso); cessioni e plusvalenze non gestite. | Piano dei rinnovi dal libro cespiti. | 🔴 |
+| U9 | Il piano non alimenta il budget e gli scenari, e negli anni successivi non viene confrontato con i risultati effettivi. | Budget dal primo anno del piano; confronto piano / consuntivo. | 🔴 |
+| U10 | È un piano numerico: mancano la parte descrittiva (obiettivi, azioni, responsabili, tempi), la valutazione dell'azienda e un documento esportabile per banche e soci. | Piano industriale completo e stampa dedicata. | 🔴 |
+| U11 | I segnali (patrimonio netto negativo, rate non coperte, debito oltre 5 volte l'EBITDA) sono avvisi sui numeri del piano: non sono una verifica degli obblighi di legge su adeguati assetti e crisi d'impresa. | Verifica con un professionista; regole dedicate. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -207,4 +223,4 @@ Ultimo aggiornamento: versione 1.11.0.
 ## H. Moduli della specifica non ancora realizzati
 
 App mobile per dipendenti ·
-Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
+Collegamenti con gestionali, banche e sensori IoT.
