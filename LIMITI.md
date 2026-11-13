@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.5.0.
+Ultimo aggiornamento: versione 1.6.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -46,7 +46,7 @@ Ultimo aggiornamento: versione 1.5.0.
 | N. | Limite | Cosa serve per chiuderlo | Stato |
 |---|---|---|---|
 | D1 | Commesse inseribili solo a mano: manca l'importazione da file. | Importazione Excel/CSV come per il magazzino. | 🔴 |
-| D2 | Mancano i dati per macchina: fermi, attrezzaggi, tempi ciclo, OEE, saturazione. | Modulo produzione. | 🔴 |
+| D2 | Mancavano i dati per macchina: fermi, attrezzaggi, tempi ciclo, OEE, saturazione. Risolto con il modulo Produzione, che confronta anche le ore macchina delle commesse con le ore operative. | — | 🟢 1.6.0 |
 | D3 | Le ore non arrivano dall'app per dipendenti (che non esiste ancora). | App mobile con QR code e modalità offline. | 🔴 |
 | D4 | Analisi clienti senza tempi di pagamento, frequenza ordini, rischio di perdita. | Scadenziario e storico ordini (modulo commerciale). | 🔴 |
 | D5 | Un solo costo orario per risorsa e un solo prezzo dell'energia per tutto l'anno. Dalla 1.5.0 il modulo Energia confronta il prezzo usato con quello reale delle bollette e segnala lo scarto, ma l'aggiornamento resta manuale e non è per mese o fascia. | Aggiornamento automatico del prezzo; tariffe per periodo e fasce orarie. | 🟡 |
@@ -71,7 +71,7 @@ Ultimo aggiornamento: versione 1.5.0.
 | F2 | Contributi e TFR, se non inseriti, sono calcolati con aliquota media e formula standard (etichettati «calcolato»), non dal contratto collettivo. | Dati dal cedolino o dal consulente del lavoro. | 🟡 |
 | F3 | Straordinari valorizzati con costo orario medio × maggiorazione unica. | Regole del CCNL applicato. | 🔴 |
 | F4 | Dati annuali per persona: niente dettaglio mensile, turni, ferie maturate e residue, ratei. | Importazione dai cedolini mensili. | 🔴 |
-| F5 | Simulazioni di riduzione d'orario, riorganizzazione dei turni e automazione non presenti (ci sono assunzione, straordinari, esternalizzazione). | Modulo produzione e investimenti. | 🔴 |
+| F5 | Simulazioni di riduzione d'orario, riorganizzazione dei turni e automazione non presenti (ci sono assunzione, straordinari, esternalizzazione). | Dati per turno (P1) e modulo investimenti. | 🔴 |
 | F6 | Costi di selezione non rilevati separatamente. | Campo dedicato. | 🔴 |
 
 ## N. Modulo Energia e utenze
@@ -80,7 +80,7 @@ Ultimo aggiornamento: versione 1.5.0.
 |---|---|---|---|
 | N1 | **Nessuna ricerca automatica delle offerte** dei fornitori: le offerte si inseriscono a mano con fonte e data. | Collegamento a una fonte pubblica verificabile (es. dati del Portale Offerte) da un server: il browser non può interrogarla direttamente. | 🔴 |
 | N2 | Le **bollette in PDF** non vengono lette: i dati si importano da Excel/CSV o si inseriscono a mano. | Lettore PDF delle bollette (vedi B1). | 🔴 |
-| N3 | Nessuna misura per macchina o reparto: i consumi sono quelli del contatore. La parte non attribuita alle commesse non è distinta tra consumo di base, fermi e sprechi. | Sensori / contatori divisionali (IoT) e modulo produzione. | 🔴 |
+| N3 | I kWh per macchina si possono ora registrare nel modulo Produzione e vengono confrontati con le bollette, ma vanno inseriti o importati: non arrivano da contatori. Il consumo a macchina ferma o in attesa non è distinto da quello in produzione. | Sensori / contatori divisionali (IoT). | 🟡 |
 | N4 | Offerte a prezzo variabile confrontate con il prezzo inserito oggi, senza previsione dell'indice; offerte a fasce orarie o con prezzi diversi per F1/F2/F3 non gestite (un solo prezzo medio). | Prezzi per fascia e scenari sull'indice. | 🔴 |
 | N5 | Potenza impegnata: il modulo segnala se è eccessiva o superata ma non calcola il risparmio, perché non conosce la quota potenza del contratto. Energia reattiva e relative penali non rilevate. | Campi dedicati in bolletta. | 🔴 |
 | N6 | Dati mensili: un conguaglio può sembrare un'anomalia; nessun confronto con produzione o clima (gradi giorno). | Collegamento con il modulo produzione; dati climatici. | 🔴 |
@@ -88,6 +88,21 @@ Ultimo aggiornamento: versione 1.5.0.
 | N8 | Nessun avviso automatico alla scadenza del contratto o quando compare un'offerta migliore: l'avviso si vede solo aprendo l'app (vedi G7). | Notifiche da server. | 🔴 |
 | N9 | Soglie delle anomalie (+25% sullo stesso mese dell'anno prima, +40% sulla mediana) e validità delle offerte (30 giorni) fissate nel codice, non modificabili dall'interfaccia. | Parametri in interfaccia. | 🔴 |
 | N10 | Autoproduzione (fotovoltaico), incentivi per l'efficienza e valutazione di interventi di risparmio non presenti. | Modulo investimenti e agevolazioni. | 🔴 |
+
+## P. Modulo Produzione
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| P1 | Registrazioni **mensili** per macchina (anche per prodotto), non per giorno, turno, operatore o singolo fermo. Le **cause dei fermi** non sono registrate: il modulo dice quanto si è fermata una macchina, non perché. | Registrazioni per evento con causale; app per dipendenti. | 🔴 |
+| P2 | Nessun collegamento con macchinari, sensori o sistemi di fabbrica: i dati si importano da Excel/CSV o si inseriscono a mano. | Integrazioni IoT / MES (dopo il database). | 🔴 |
+| P3 | Costo dei fermi: se manca il costo orario di fermo della macchina è **stimato** dal margine di contribuzione medio di bilancio, uguale per tutte le macchine, e vale solo se la produzione persa sarebbe stata venduta. | Costo orario di fermo per macchina; ordini e saturazione reali. | 🟡 |
+| P4 | Costo della non qualità calcolato solo se le registrazioni riportano il costo diretto del pezzo; non comprende rilavorazioni, resi e reclami. | Collegamento automatico al costo unitario delle commesse; dati di qualità. | 🔴 |
+| P5 | La capacità utilizzata richiede la capacità mensile della macchina inserita a mano; nessuna pianificazione della produzione né calcolo dei carichi futuri. | Calendario dei turni e ordini da evadere. | 🔴 |
+| P6 | Il modulo «conviene produrre o fermare?» (ordini, scorte, costi evitabili, costi di riavvio) non è presente. | Modulo decisioni produttive, che userà produzione, magazzino e commesse. | 🔴 |
+| P7 | Obiettivo di OEE (65%) e soglie iniziali generali, non di settore (modificabili dall'interfaccia). | Benchmark (B3). | 🟡 |
+| P8 | Produzione per dipendente e per turno non analizzata; consumi idrici per macchina registrabili ma non analizzati. | Dati per turno (P1). | 🔴 |
+| P9 | Macchine e commesse si collegano a mano (una macchina ↔ una risorsa delle commesse); le registrazioni non sono legate alla singola commessa nei calcoli. | Collegamento per codice commessa. | 🔴 |
+| P10 | Con più prodotti sulla stessa macchina la performance è corretta solo se ogni riga ha il proprio tempo ciclo standard. | Anagrafica prodotti con tempi ciclo. | 🔴 |
 
 ## G. Piattaforma, vendita e sicurezza
 
@@ -107,6 +122,6 @@ Ultimo aggiornamento: versione 1.5.0.
 
 ## H. Moduli della specifica non ancora realizzati
 
-Produzione e controllo industriale (OEE, fermi, scarti) · App mobile per dipendenti ·
+App mobile per dipendenti ·
 Investimenti e analisi di convenienza · Finanziamenti, mutui, bandi e agevolazioni · Decisioni produttive (produrre o fermare) ·
 Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.

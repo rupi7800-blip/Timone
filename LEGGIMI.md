@@ -1,6 +1,6 @@
 # Timone · piattaforma di controllo e analisi aziendale
 
-Versione 1.5.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**.
+Versione 1.6.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**.
 
 Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [LIMITI.md](LIMITI.md).
 "Timone" è un nome di lavoro: si cambia in `index.html` e `manifest.json`.
@@ -21,6 +21,7 @@ Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [
 - **Modulo Magazzino e scorte** (attivabile per azienda): inventario per articolo importato da Excel/CSV o inserito a mano; ogni articolo è classificato come regolare, in eccesso, fermo, obsoleto o sotto scorta in base a consumi, copertura e data dell'ultimo movimento (se i dati non bastano resta "dati incompleti", non viene indovinato); capitale immobilizzato e suo costo finanziario, capitale liberabile, classi ABC, elenco dei riordini con quantità proposte, confronto con le rimanenze di bilancio; criticità riportate in Diagnosi e nel Report.
 - **Modulo Personale** (attivabile per azienda): riepilogo annuale per persona importato da Excel/CSV o inserito a mano; costo aziendale effettivo (retribuzione, contributi, TFR, INAIL, premi, benefit, formazione), costo per ora lavorata per reparto, quota di straordinari e assenze, diretti e indiretti; produttività (ricavi e valore aggiunto per persona e per ora); confronto con il costo del personale di bilancio e con i costi orari usati nelle commesse; simulazioni «conviene assumere?», «straordinari o una persona in più?», «conviene esternalizzare?». Contributi e TFR non inseriti sono calcolati ed etichettati. Nessuna graduatoria individuale.
 - **Modulo Energia e utenze** (attivabile per azienda): bollette mensili di elettricità, gas, acqua e altri combustibili, importate da Excel/CSV o inserite a mano, per utenza e per utilizzo (produzione, uffici, magazzino, riscaldamento…); consumi, costo unitario reale, composizione della spesa (energia, trasporto, oneri, imposte), fasce orarie, confronto con l'anno precedente; mesi con consumi anomali; potenza impegnata eccessiva o superata; contratti in scadenza; **confronto con le offerte** inserite dall'utente sul costo complessivo, al netto di costi di cambio e penali; collegamento con le commesse (prezzo del kWh usato e kWh attribuiti). I mesi mancanti non vengono stimati.
+- **Modulo Produzione** (attivabile per azienda, per chi lavora con macchine o impianti): registrazioni mensili per macchina importate da Excel/CSV o inserite a mano; ore disponibili, pianificate, operative; disponibilità, performance, qualità e **OEE**; perdite in ore equivalenti con la principale in evidenza; produttività oraria, tempo ciclo effettivo, energia per pezzo, capacità utilizzata; costo dei fermi (inserito oppure stimato dal bilancio, sempre etichettato) e dei pezzi scartati; confronto con le ore macchina delle commesse e con i kWh delle bollette. Senza tempo ciclo standard l'OEE non viene calcolato.
 - **Simulazione generale**: generatore di aziende di fantasia (5 settori × 6 situazioni, riproducibili con un seme), collaudo dell'azienda aperta e collaudo massivo del motore.
 - Aggiornamento: l'app resta sulla versione installata finché non si preme "Aggiorna" (compare solo se `versione.json` indica una versione più recente).
 
@@ -40,6 +41,7 @@ Regole applicate ovunque: nessun dato inventato, i vuoti non valgono zero, le st
 | `magazzino.js`, `ui-magazzino.js` | modulo Magazzino: calcolo, importazione e interfaccia |
 | `personale.js`, `ui-personale.js` | modulo Personale: calcolo, simulazioni, importazione e interfaccia |
 | `energia.js`, `ui-energia.js` | modulo Energia e utenze: calcolo, importazione e interfaccia |
+| `produzione.js`, `ui-produzione.js` | modulo Produzione: calcolo, importazione e interfaccia |
 | `LIMITI.md` | registro dei limiti aperti |
 | `dati.js` | archivio: dispositivo, Supabase cloud, server aziendale |
 | `supabase-setup.sql` | schema del database con isolamento per azienda |
@@ -68,6 +70,7 @@ Il nucleo non va modificato: la scheda compare da sola, le criticità entrano ne
 
 - Motore: 43 test su un caso calcolato a mano + 7.680 controlli su 240 aziende simulate, tutti superati.
 - Commesse: 29 test su un caso calcolato a mano + 1.620 controlli su 90 aziende con commesse simulate (quadratura con l'EBIT, ribaltamento integrale, costi attribuiti entro il bilancio), tutti superati.
+- Produzione: 42 test (OEE, perdite, costo dei fermi e coerenze calcolati a mano, importazione) + 540 controlli su 36 aziende manifatturiere e artigiane simulate, tutti superati.
 - Energia: 41 test (bollette, costo unitario, anomalie, potenza, offerte e penali calcolati a mano, importazione) + 2.772 controlli su 90 aziende con utenze simulate, tutti superati.
 - Personale: 39 test (costi, produttività e simulazioni calcolati a mano, importazione) + 1.440 controlli su 90 aziende con personale simulato, tutti superati.
 - Magazzino: 33 test (classificazione calcolata a mano, importazione con numeri e date italiani) + 1.500 controlli su 75 aziende con inventario simulato, tutti superati.
