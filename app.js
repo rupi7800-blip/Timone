@@ -3,7 +3,7 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.2.0';
+  var VERSIONE = '1.3.0';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
@@ -598,6 +598,16 @@
   function xbrlDa(file) {
     return file.arrayBuffer().then(function (buf) { return X.righeImport(X.leggi(new Uint8Array(buf)), file.name); });
   }
+  // legge un file CSV o Excel e restituisce la matrice righe × colonne (usata anche dai moduli)
+  function tabellaDa(file) {
+    if (/\.xlsx?$/i.test(file.name)) {
+      return (window.XLSX ? Promise.resolve() : caricaScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js')).then(function () { return file.arrayBuffer(); }).then(function (buf) {
+        var wb = window.XLSX.read(buf, { type: 'array' }), ws = wb.Sheets[wb.SheetNames[0]];
+        return window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+      });
+    }
+    return file.text().then(function (t) { return Imp.csv(t); });
+  }
   function leggiFile(file) {
     var nome = file.name;
     if (/\.(xbrl|xml|p7m)$/i.test(nome)) {
@@ -820,7 +830,7 @@
   }
   window.Timone = {
     stato: stato, esc: esc, eur: eur, fmt: fmt, nf0: nf0, toast: toast, salva: salva, disegna: disegna, anni: anni, nDi: nDi, completo: completo,
-    selAnno: selAnno, scrivibile: scrivibile, chiedi: chiedi, conferma: conferma, chiudiDlg: chiudiDlg, scarica: scarica, numero: Imp.numero,
+    selAnno: selAnno, scrivibile: scrivibile, chiedi: chiedi, conferma: conferma, chiudiDlg: chiudiDlg, scarica: scarica, numero: Imp.numero, tabellaDa: tabellaDa,
     registra: function (m) { MODULI.push(m); Object.keys(m.azioni || {}).forEach(function (k) { AZIONI[k] = m.azioni[k]; }); Object.keys(m.cambi || {}).forEach(function (k) { CAMBI[k] = m.cambi[k]; }); if (stato.az) disegna(); }
   };
   avvia();
