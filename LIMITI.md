@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.8.0.
+Ultimo aggiornamento: versione 1.9.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -30,7 +30,7 @@ Ultimo aggiornamento: versione 1.8.0.
 | B7 | Rendiconto finanziario ricostruito dalle variazioni di bilancio (stima). | Dati di cassa o rendiconto dell'azienda. | 🔴 |
 | B8 | DSO e DPO sovrastimati perché crediti e debiti includono l'IVA; usano i saldi di fine anno. | Aliquota IVA media o scadenziario. | 🔴 |
 | B9 | Nel bilancio abbreviato la quota a breve dei debiti va inserita a mano (ripartizione assistita, non automatica). | Nota integrativa o bilancio di verifica (vedi B2, C2). | 🟡 |
-| B10 | Nessuna previsione di cassa, scadenziario, esposizione bancaria. | Modulo tesoreria. | 🔴 |
+| B10 | Nessuna previsione di cassa né scadenziario di clienti e fornitori. Dalla 1.9.0 il modulo Finanziamenti mostra esposizione bancaria, rate e scadenze dei debiti. | Modulo tesoreria. | 🟡 |
 | B11 | Classificazione costi fissi/variabili: solo una quota percentuale per voce di bilancio, non per singolo conto. | Bilancio di verifica (B2). | 🔴 |
 
 ## C. Lettura XBRL
@@ -110,8 +110,8 @@ Ultimo aggiornamento: versione 1.8.0.
 |---|---|---|---|
 | V1 | **Risparmi e maggiori ricavi sono ipotesi inserite dall'utente**: il modulo non li stima dagli altri moduli (ad esempio il valore dei fermi evitati, dell'energia risparmiata o degli scarti ridotti) e non parte dalle criticità della diagnosi. | Proposte precompilate dai dati di produzione, energia, magazzino e commesse. | 🔴 |
 | V2 | Imposte con un'unica aliquota semplificata (27,9% iniziale, modificabile). Non sono considerati crediti d'imposta e agevolazioni sugli investimenti, la deducibilità effettiva di ammortamenti e interessi, l'IVA. Il risparmio d'imposta negli anni in perdita è considerato utilizzabile. | Regole fiscali aggiornate e verificate; modulo agevolazioni. | 🔴 |
-| V3 | Contributi a fondo perduto inseriti a mano e considerati incassati subito; nessuna ricerca di bandi e incentivi. | Modulo finanziamenti e agevolazioni. | 🔴 |
-| V4 | Finanziamento solo a rata annuale costante e tasso fisso: non gestiti leasing, preammortamento, tasso variabile, rate mensili, garanzie e costi accessori del prestito. | Estensione del piano di rimborso; modulo mutui. | 🔴 |
+| V3 | Contributi a fondo perduto inseriti a mano e considerati incassati subito; non sono presi dal registro delle agevolazioni del modulo Finanziamenti; nessuna ricerca di bandi (R1). | Collegamento con il registro delle agevolazioni. | 🔴 |
+| V4 | Nel modulo Investimenti il finanziamento è solo a rata annuale costante e tasso fisso. Dalla 1.9.0 il modulo Finanziamenti gestisce rate mensili, preammortamento, leasing e spese, ma i due moduli non sono collegati: il finanziamento va inserito in entrambi. | Collegamento Investimenti ↔ Finanziamenti (vedi R10). | 🟡 |
 | V5 | Rischio misurato solo con la sensibilità sui benefici e sul costo; nessuno scenario combinato né probabilità. | Scenari prudenziale / centrale / favorevole anche sugli investimenti. | 🔴 |
 | V6 | Benefici costanti o a crescita costante e pieni dal primo anno: niente avviamento graduale, capitale circolante aggiuntivo, inflazione, sostituzioni intermedie. | Benefici anno per anno. | 🔴 |
 | V7 | Nessuna **verifica a consuntivo** degli investimenti realizzati: lo stato «realizzato» è solo un'etichetta, i risultati effettivi non vengono misurati. | Confronto tra previsto e ottenuto sui dati degli anni successivi. | 🔴 |
@@ -134,6 +134,26 @@ Ultimo aggiornamento: versione 1.8.0.
 | Q9 | Le previsioni di vendita sono trattate con un solo confronto (con e senza previsioni), senza probabilità. | Scenari multipli sulla domanda. | 🔴 |
 | Q10 | Il risultato non è collegato alla previsione di cassa né al bilancio dell'azienda: resta un confronto a sé. | Collegamento con previsione di cassa e budget. | 🔴 |
 
+## R. Modulo Finanziamenti, mutui e agevolazioni
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| R1 | **Nessuna ricerca di bandi e agevolazioni**: è un registro compilato dall'utente con fonte e data di verifica. Timone non propone misure e non controlla che la fonte indicata sia ancora valida. | Collegamento da server a fonti ufficiali verificabili; aggiornamento periodico. | 🔴 |
+| R2 | I requisiti sono trascritti e spuntati dall'utente: nessun controllo automatico di ammissibilità, cumulabilità tra aiuti, limiti «de minimis», spese ammissibili. | Regole per misura, verificate con un consulente. | 🔴 |
+| R3 | **Tasso variabile**: il piano usa per tutta la durata il tasso inserito oggi; nessun indice (Euribor), nessuno storico delle variazioni. L'effetto di un aumento è calcolato solo come un punto in più sui 12 mesi successivi. | Indice + spread, aggiornamento del tasso, scenari sui tassi. | 🔴 |
+| R4 | Il **tasso effettivo è calcolato da Timone**, non è il TAEG/ISC del contratto. Gli interessi sono calcolati a mesi interi (tasso annuo × mesi ÷ 12), non a giorni effettivi: rispetto al piano della banca possono esserci differenze di pochi euro. Il piano della banca non si può importare. | Convenzioni di calcolo per contratto; importazione del piano. | 🔴 |
+| R5 | Finanziamenti inseriti **solo a mano**: nessuna importazione da file, contratto PDF o Centrale dei Rischi. | Importazione Excel/CSV e lettura dei documenti. | 🔴 |
+| R6 | Fidi: un solo utilizzo medio annuo; non distingue cassa, anticipo fatture e altre linee con tassi diversi, né sconfinamenti e commissioni di istruttoria veloce. I fidi sono considerati sempre rinnovati. | Dati trimestrali dagli estratti conto. | 🔴 |
+| R7 | Leasing semplificato (canoni costanti, anticipo, riscatto): IVA, deducibilità fiscale e costi accessori non considerati. | Regole fiscali verificate. | 🔴 |
+| R8 | La **copertura delle rate** è EBITDA dell'anno ÷ rate dei 12 mesi successivi: non è il DSCR sui flussi di cassa previsti (non considera imposte, investimenti, capitale circolante) e usa un dato passato. | Previsione di cassa (B10) e budget. | 🔴 |
+| R9 | Estinzione e rinegoziazione: risparmi non attualizzati, senza effetti fiscali; penale come percentuale unica; non disponibili per leasing e fidi. | Estensione delle simulazioni. | 🔴 |
+| R10 | Nessun collegamento con il modulo Investimenti, con il budget e con una tesoreria; nessun avviso automatico per rate e termini dei bandi (si vedono aprendo l'app: G7). | Collegamenti tra moduli; notifiche da server. | 🔴 |
+| R11 | Garanzie registrate solo come testo: non sono calcolati i costi (commissioni di garanzia, confidi) né gestiti i covenant del contratto. | Campi e controlli dedicati. | 🔴 |
+| R12 | Moratorie, sospensioni, rate non pagate e rimborsi parziali non gestiti; le rate sono contate a mese intero. | Eventi sul piano di rimborso. | 🔴 |
+| R13 | Per finanziamenti agevolati e garanzie pubbliche il beneficio è un importo inserito a mano, non calcolato (equivalente sovvenzione). | Calcolo del beneficio dal confronto con il tasso di mercato. | 🔴 |
+| R14 | Soglie (copertura minima 1,3; fonte da riverificare dopo 90 giorni; avviso 30 giorni prima del termine) fissate nel codice. | Parametri in interfaccia. | 🔴 |
+| R15 | Nel bilancio simulato la quota dei mutui in scadenza entro 12 mesi non è separata: nelle aziende di prova i debiti a breve di bilancio e quelli calcolati dai piani differiscono (i totali coincidono). | Simulatore con la quota corrente dei mutui. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -153,4 +173,4 @@ Ultimo aggiornamento: versione 1.8.0.
 ## H. Moduli della specifica non ancora realizzati
 
 App mobile per dipendenti ·
-Finanziamenti, mutui, bandi e agevolazioni · Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
+Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
