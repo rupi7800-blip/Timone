@@ -1,0 +1,3 @@
+{ "name": "Timone · controllo e analisi aziendale", "short_name": "Timone", "start_url": "./", "display": "standalone",
+  "background_color": "#10243a", "theme_color": "#10243a", "lang": "it",
+  "icons": [{ "src": "icona.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }] }

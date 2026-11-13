@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10243a">
+<title>Timone · controllo e analisi aziendale</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--bg:#f3f1ec;--carta:#fff;--ink:#16202b;--muto:#5d6875;--linea:#dedad1;--blu:#10243a;--acc:#0b7a75;--acc2:#e6f3f1;
+--rosso:#b3261e;--rossobg:#fbe9e7;--giallo:#8a5a00;--giallobg:#fdf1d6;--verde:#1f6b3a;--verdebg:#e3f2e7;--r:14px}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1620;--carta:#15212e;--ink:#e8edf2;--muto:#9aa7b4;--linea:#263647;--blu:#0a1420;--acc:#4fc3bb;--acc2:#12302f;
+--rosso:#ff8a80;--rossobg:#3a1614;--giallo:#f2c14e;--giallobg:#33290f;--verde:#7ed39a;--verdebg:#12301c}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:var(--blu);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 0;position:sticky;top:0;z-index:20}
+.testa{display:flex;align-items:center;gap:10px}
+.marchio{font-weight:800;letter-spacing:.04em;font-size:17px}
+.marchio small{display:block;font-weight:400;letter-spacing:0;font-size:11px;opacity:.7}
+#azBtn{margin-left:auto;max-width:55%;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#aggiornaBtn{display:none;background:#f2c14e;color:#201800;border:0;border-radius:999px;padding:7px 12px;font:inherit;font-weight:700;font-size:13px}
+nav{display:flex;gap:2px;overflow-x:auto;margin:10px -14px 0;padding:0 10px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:none;background:none;border:0;color:rgba(255,255,255,.7);font:inherit;font-size:14px;padding:9px 11px;border-bottom:3px solid transparent}
+nav button.on{color:#fff;border-color:#4fc3bb;font-weight:650}
+main{max-width:980px;margin:0 auto;padding:14px 12px 90px}
+h2{font-size:19px;margin:6px 0 10px}
+h3{font-size:15px;margin:18px 0 8px}
+p{margin:6px 0}
+.muto{color:var(--muto);font-size:13px}
+.carta{background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:14px;margin:10px 0}
+.riga{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sp{margin-left:auto}
+button.b,a.b{display:inline-block;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;text-decoration:none;cursor:pointer}
+button.b.s,a.b.s{background:none;color:var(--acc);border:1px solid var(--acc)}
+button.b.p{padding:6px 10px;font-size:13px}
+button.b.peri{background:none;color:var(--rosso);border:1px solid var(--rosso)}
+button:disabled{opacity:.5}
+select,input[type=text],input[type=number],input[type=email],input[type=password]{font:inherit;background:var(--carta);color:var(--ink);border:1px solid var(--linea);border-radius:9px;padding:8px 10px;max-width:100%}
+label{font-size:13px;color:var(--muto)}
+.campo{display:flex;flex-direction:column;gap:3px;flex:1 1 150px;min-width:0}
+.sub{display:flex;gap:6px;overflow-x:auto;margin:4px 0 10px;scrollbar-width:none}
+.sub button{flex:none;border:1px solid var(--linea);background:var(--carta);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px}
+.sub button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.kpi button{text-align:left;background:var(--carta);border:1px solid var(--linea);border-radius:var(--r);padding:11px 12px;font:inherit;color:inherit;cursor:pointer}
+.kpi .n{font-size:12px;color:var(--muto)}
+.kpi .v{font-size:19px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .d{font-size:12px}
+.su{color:var(--verde)}.giu{color:var(--rosso)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.scorri{overflow-x:auto;-webkit-overflow-scrolling:touch}
+th,td{padding:7px 8px;border-bottom:1px solid var(--linea);text-align:right;white-space:nowrap;font-size:14px}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:150px}
+th{font-size:12px;color:var(--muto);font-weight:600}
+tr.tot td{font-weight:750;background:var(--acc2)}
+tr.sez td{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muto);border-bottom:0;padding-top:14px}
+.tag{display:inline-block;font-size:11px;border-radius:999px;padding:1px 8px;border:1px solid var(--linea);color:var(--muto);white-space:nowrap}
+.tag.simulato{background:var(--giallobg);color:var(--giallo);border-color:transparent}
+.tag.importato,.tag.manuale{background:var(--acc2);color:var(--acc);border-color:transparent}
+.tag.ok{background:var(--verdebg);color:var(--verde);border-color:transparent}
+.tag.rosso{background:var(--rossobg);color:var(--rosso);border-color:transparent}
+.tag.giallo{background:var(--giallobg);color:var(--giallo);border-color:transparent}
+.avviso{border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px;background:var(--giallobg);color:var(--giallo)}
+.avviso.rosso{background:var(--rossobg);color:var(--rosso)}
+.avviso.ok{background:var(--verdebg);color:var(--verde)}
+.avviso.info{background:var(--acc2);color:var(--acc)}
+.crit{border-left:5px solid var(--giallo)}
+.crit.rosso{border-left-color:var(--rosso)}
+.crit h3{margin:0 0 6px}
+.crit dl{margin:0;display:grid;grid-template-columns:1fr;gap:6px}
+.crit dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muto)}
+.crit dd{margin:0}
+details{border-bottom:1px solid var(--linea)}
+details:last-child{border-bottom:0}
+summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 0;cursor:pointer}
+summary::-webkit-details-marker{display:none}
+summary .nome{flex:1;min-width:0}
+summary .val{font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
+summary .pre{font-size:12px;color:var(--muto);white-space:nowrap}
+.spiega{font-size:14px;padding:0 0 12px}
+.spiega b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muto);margin-top:8px;font-weight:600}
+.voce{display:grid;grid-template-columns:1fr 130px;gap:4px 8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linea)}
+.voce input{text-align:right;width:100%}
+.voce .meta{grid-column:1/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.voce .meta label{display:flex;gap:4px;align-items:center}
+.esito{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--linea);font-size:14px}
+.esito i{font-style:normal;font-weight:800;width:18px}
+.esito.ok i{color:var(--verde)}.esito.ko i{color:var(--rosso)}
+.cursore{display:grid;grid-template-columns:1fr 64px;gap:2px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linea)}
+.cursore input[type=range]{width:100%;grid-column:1}
+.cursore output{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.cursore .et{grid-column:1/-1}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--blu);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:90%;text-align:center}
+#toast.on{opacity:1}
+dialog{border:0;border-radius:18px;padding:0;width:min(520px,94vw);background:var(--carta);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.dlg{padding:16px}
+.lista button{display:flex;width:100%;gap:8px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--linea);padding:12px 2px;font:inherit;color:inherit}
+svg text{fill:var(--muto);font-size:11px}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--muto);margin-top:4px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="testa">
+    <div class="marchio">TIMONE<small>controllo e analisi aziendale</small></div>
+    <button id="aggiornaBtn" data-a="aggiorna">Aggiorna</button>
+    <button id="azBtn" data-a="aziende">Scegli azienda</button>
+  </div>
+  <nav id="nav"></nav>
+</header>
+<main id="main"><p class="muto">Caricamento…</p></main>
+<dialog id="dlg"><div class="dlg" id="dlgCorpo"></div></dialog>
+<div id="toast" role="status"></div>
+<script src="motore.js"></script>
+<script src="simulatore.js"></script>
+<script src="importa.js"></script>
+<script src="dati.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
