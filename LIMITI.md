@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.10.0.
+Ultimo aggiornamento: versione 1.11.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -16,6 +16,7 @@ Ultimo aggiornamento: versione 1.10.0.
 | A4 | Tasto «Aggiorna»: riscritto senza vedere quello di AgendApp 1.6.0, può differire; mai provato su GitHub Pages con due versioni successive. | Confronto con AgendApp e prova online. | 🔴 |
 | A5 | Stampa del report e download dei file provati solo in parte (nella pagina di prova sono bloccati). | Prova sulla versione pubblicata. | 🔴 |
 | A6 | Non è noto se GitHub Pages sia stato attivato per il repository. | Attivazione da Settings → Pages. | 🔴 |
+| A7 | Caricamento del bilancio XBRL di un concorrente provato solo con file generati da noi (ordinario e abbreviato), non con un bilancio reale di un'altra società. | Un bilancio XBRL reale di un concorrente. | 🔴 |
 
 ## B. Nucleo finanziario
 
@@ -23,7 +24,7 @@ Ultimo aggiornamento: versione 1.10.0.
 |---|---|---|---|
 | B1 | Bilanci in **PDF** non letti (né testo né scansione/OCR). | Lettore PDF + riconoscimento delle voci, con verifica sui totali. | 🔴 |
 | B2 | **Bilancio di verifica**, mastrini e libro giornale non importabili: manca la mappatura conto → voce. | Importazione con piano dei conti e regole di mappatura salvabili. | 🔴 |
-| B3 | Le soglie della diagnosi sono regole generali, non valori di settore. Nessun **benchmark** (bilanci depositati, ISTAT, ISA, codice ATECO). | Modulo benchmarking con fonti verificabili. | 🔴 |
+| B3 | Le soglie della diagnosi sono regole generali, non valori di settore. Dalla 1.11.0 il modulo Confronti permette di confrontarsi con i bilanci dei concorrenti e con riferimenti di cui si indica la fonte, ma Timone non contiene dati di settore propri e la diagnosi non usa ancora i confronti per le sue soglie. | Banca dati di bilanci per codice ATECO (vedi T1); soglie della diagnosi ricavate dai confronti. | 🟡 |
 | B4 | La diagnosi non calcola costo dell'intervento, investimento necessario e tempo di recupero. Dalla 1.7.0 il modulo Investimenti calcola VAN, TIR e recupero, ma va compilato a mano: le criticità della diagnosi non generano da sole una proposta di investimento. | Collegamento criticità → investimento precompilato (vedi V1). | 🟡 |
 | B5 | Scostamenti di budget: non separano effetto prezzo ed effetto volume. Budget solo economico (mancano finanziario, patrimoniale, investimenti). | Dati di vendita per quantità; budget di cassa. | 🔴 |
 | B6 | Scenari: un solo anno; non considerano investimenti, reazione dei clienti ai prezzi, limiti di capacità. Imposte con aliquota semplificata (effettiva dell'anno o 27,9%). | Pianificazione pluriennale (1-3-5-10 anni) con stato patrimoniale e cassa previsionali. | 🔴 |
@@ -171,6 +172,22 @@ Ultimo aggiornamento: versione 1.10.0.
 | S11 | I clienti sono riconosciuti dal nome: lo stesso cliente scritto in due modi diversi risulta diviso, due omonimi uniti. | Codice cliente o partita IVA come chiave. | 🔴 |
 | S12 | «Perdita di un cliente»: costi fissi invariati e nessuna sostituzione del volume; se mancano i costi diretti il margine è stimato con la media di bilancio (segnalato). | Costi per cliente (S3). | 🟡 |
 
+## T. Modulo Confronti (benchmarking) e ISA
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| T1 | **Timone non contiene medie di settore** né banche dati: i termini di confronto li carica l'utente. Con meno di tre termini la mediana è poco significativa (viene segnalato). | Accesso a una banca dati di bilanci per codice ATECO, area e dimensione (di norma a pagamento), da server. | 🔴 |
+| T2 | I bilanci dei concorrenti vanno scaricati uno per uno dal Registro delle Imprese e caricati a mano: nessuno scaricamento automatico. | Collegamento al Registro delle Imprese o a un fornitore di dati. | 🔴 |
+| T3 | Per i concorrenti con **bilancio abbreviato o micro** non sono disponibili giorni di incasso e di pagamento, ciclo monetario, PFN/EBITDA, Debt/Equity e ROI; gli altri indici sono ricavati dai totali, con i crediti considerati tutti a breve. | Lettura della nota integrativa (C2). | 🔴 |
+| T4 | La **confrontabilità non è verificata**: attività effettiva, area, modello d'impresa, scelte contabili (leasing, rivalutazioni, ammortamenti) possono rendere due bilanci non paragonabili. C'è solo un avviso quando i ricavi differiscono di oltre 5 volte. | Controlli su ATECO e dimensione; note di rettifica. | 🔴 |
+| T5 | Riferimenti inseriti a mano: un solo valore per indice, digitato dall'utente; non si distinguono media, mediana e quartili della fonte, né il campione su cui è calcolata. | Campi per quartili e numerosità del campione. | 🔴 |
+| T6 | Verso «meglio/peggio» e tolleranza (10% dalla mediana) fissati nel codice e uguali per tutti i settori; gli indici non sono pesati per importanza. | Parametri in interfaccia. | 🔴 |
+| T7 | Il valore in euro dello scarto è calcolato solo per margini, giorni di incasso e giorni di scorta, a parità di ricavi: è un ordine di grandezza. | Stime più articolate con i dati degli altri moduli. | 🟡 |
+| T8 | Solo indici di bilancio: nessun confronto su prezzi, produttività per addetto (i dipendenti non sono letti dall'XBRL), energia, efficienza produttiva. | Dati gestionali di settore con fonte. | 🔴 |
+| T9 | Confronto su un anno alla volta: manca l'andamento pluriennale rispetto ai concorrenti. | Serie storiche del confronto. | 🔴 |
+| T10 | **Il punteggio ISA non è calcolato** e non si può simulare come migliorarlo (richiederebbe le formule di ogni ISA): si registra il punteggio della dichiarazione. I file della dichiarazione non vengono letti. | Formule ISA per codice attività, verificate; lettura del file telematico. | 🔴 |
+| T11 | Le soglie ISA nel codice sono quelle del provvedimento n. 123160/2026 (periodo d'imposta 2025): vanno aggiornate a mano ogni anno; per gli altri anni compare un avviso. I singoli benefici e i loro limiti non sono elencati; più attività soggette a ISA non sono gestite. | Tabella delle soglie per anno, verificata sui provvedimenti. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -190,4 +207,4 @@ Ultimo aggiornamento: versione 1.10.0.
 ## H. Moduli della specifica non ancora realizzati
 
 App mobile per dipendenti ·
-Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
+Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
