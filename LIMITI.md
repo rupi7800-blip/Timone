@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.4.0.
+Ultimo aggiornamento: versione 1.5.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -49,7 +49,7 @@ Ultimo aggiornamento: versione 1.4.0.
 | D2 | Mancano i dati per macchina: fermi, attrezzaggi, tempi ciclo, OEE, saturazione. | Modulo produzione. | 🔴 |
 | D3 | Le ore non arrivano dall'app per dipendenti (che non esiste ancora). | App mobile con QR code e modalità offline. | 🔴 |
 | D4 | Analisi clienti senza tempi di pagamento, frequenza ordini, rischio di perdita. | Scadenziario e storico ordini (modulo commerciale). | 🔴 |
-| D5 | Un solo costo orario per risorsa e un solo prezzo dell'energia per tutto l'anno. | Tariffe per periodo e fasce orarie (modulo energia). | 🔴 |
+| D5 | Un solo costo orario per risorsa e un solo prezzo dell'energia per tutto l'anno. Dalla 1.5.0 il modulo Energia confronta il prezzo usato con quello reale delle bollette e segnala lo scarto, ma l'aggiornamento resta manuale e non è per mese o fascia. | Aggiornamento automatico del prezzo; tariffe per periodo e fasce orarie. | 🟡 |
 | D6 | Preventivo come unico importo (costo diretto), non per singola componente. | Preventivo dettagliato. | 🔴 |
 
 ## E. Modulo Magazzino
@@ -74,6 +74,21 @@ Ultimo aggiornamento: versione 1.4.0.
 | F5 | Simulazioni di riduzione d'orario, riorganizzazione dei turni e automazione non presenti (ci sono assunzione, straordinari, esternalizzazione). | Modulo produzione e investimenti. | 🔴 |
 | F6 | Costi di selezione non rilevati separatamente. | Campo dedicato. | 🔴 |
 
+## N. Modulo Energia e utenze
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| N1 | **Nessuna ricerca automatica delle offerte** dei fornitori: le offerte si inseriscono a mano con fonte e data. | Collegamento a una fonte pubblica verificabile (es. dati del Portale Offerte) da un server: il browser non può interrogarla direttamente. | 🔴 |
+| N2 | Le **bollette in PDF** non vengono lette: i dati si importano da Excel/CSV o si inseriscono a mano. | Lettore PDF delle bollette (vedi B1). | 🔴 |
+| N3 | Nessuna misura per macchina o reparto: i consumi sono quelli del contatore. La parte non attribuita alle commesse non è distinta tra consumo di base, fermi e sprechi. | Sensori / contatori divisionali (IoT) e modulo produzione. | 🔴 |
+| N4 | Offerte a prezzo variabile confrontate con il prezzo inserito oggi, senza previsione dell'indice; offerte a fasce orarie o con prezzi diversi per F1/F2/F3 non gestite (un solo prezzo medio). | Prezzi per fascia e scenari sull'indice. | 🔴 |
+| N5 | Potenza impegnata: il modulo segnala se è eccessiva o superata ma non calcola il risparmio, perché non conosce la quota potenza del contratto. Energia reattiva e relative penali non rilevate. | Campi dedicati in bolletta. | 🔴 |
+| N6 | Dati mensili: un conguaglio può sembrare un'anomalia; nessun confronto con produzione o clima (gradi giorno). | Collegamento con il modulo produzione; dati climatici. | 🔴 |
+| N7 | Acqua: mancano costi di depurazione e scarico separati e i consumi per reparto. | Campi dedicati. | 🔴 |
+| N8 | Nessun avviso automatico alla scadenza del contratto o quando compare un'offerta migliore: l'avviso si vede solo aprendo l'app (vedi G7). | Notifiche da server. | 🔴 |
+| N9 | Soglie delle anomalie (+25% sullo stesso mese dell'anno prima, +40% sulla mediana) e validità delle offerte (30 giorni) fissate nel codice, non modificabili dall'interfaccia. | Parametri in interfaccia. | 🔴 |
+| N10 | Autoproduzione (fotovoltaico), incentivi per l'efficienza e valutazione di interventi di risparmio non presenti. | Modulo investimenti e agevolazioni. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -92,6 +107,6 @@ Ultimo aggiornamento: versione 1.4.0.
 
 ## H. Moduli della specifica non ancora realizzati
 
-Energia e utenze (con confronto offerte) · Produzione e controllo industriale (OEE, fermi, scarti) · App mobile per dipendenti ·
+Produzione e controllo industriale (OEE, fermi, scarti) · App mobile per dipendenti ·
 Investimenti e analisi di convenienza · Finanziamenti, mutui, bandi e agevolazioni · Decisioni produttive (produrre o fermare) ·
 Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.

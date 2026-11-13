@@ -3,7 +3,7 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.4.0';
+  var VERSIONE = '1.5.0';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
@@ -363,9 +363,20 @@
   }
 
   // ------------------------------------------------------------ diagnosi
+  function carteOperative(extra) {
+    var h = '';
+    if (extra.length) h += '<h3>Dalla gestione operativa</h3>';
+    extra.forEach(function (c) {
+      h += '<div class="carta crit ' + c.gravita + '"><h3><span class="tag ' + c.gravita + '">' + esc(c.modulo) + '</span> ' + esc(c.titolo) + '</h3><dl>' +
+        '<div><dt>Dati che lo dimostrano</dt><dd>' + esc(c.dati) + '</dd></div><div><dt>Causa probabile (ipotesi)</dt><dd>' + esc(c.causa) + '</dd></div>' +
+        '<div><dt>Intervento consigliato</dt><dd>' + esc(c.intervento) + '</dd></div><div><dt>Quanto pesa</dt><dd>' + esc(c.effetto) + '</dd></div>' +
+        '<div><dt>Affidabilità</dt><dd>' + (stato.az.simulata ? 'dati simulati' : 'dipende dalla completezza dei dati gestionali inseriti') + '</dd></div></dl></div>';
+    });
+    return h;
+  }
   function vistaDiagnosi() {
     var testa = '<div class="riga"><h2 style="margin:0">Diagnosi</h2><span class="sp"></span>' + selAnno() + '</div>';
-    if (!completo(stato.anno)) return testa + bloccoIncompleto(stato.anno, 'Diagnosi');
+    if (!completo(stato.anno)) return testa + bloccoIncompleto(stato.anno, 'Diagnosi di bilancio') + carteOperative(criticitaModuli(stato.anno));
     var d = M.diagnosi(serieCompleta(stato.anno), stato.az.classificazione), q = qualita(stato.anno);
     var h = testa + bannerQualita(stato.anno, true) +
       '<p class="muto">Criticità ordinate per priorità. Le soglie sono regole generali di prudenza, non medie del settore; ogni importo è calcolato dai dati inseriti con la formula indicata nella scheda Indici.</p>';
@@ -380,13 +391,7 @@
         '<div><dt>Intervento consigliato</dt><dd>' + esc(c.intervento) + '</dd></div><div><dt>Quanto pesa</dt><dd>' + esc(c.effetto) + '</dd></div>' +
         '<div><dt>Affidabilità</dt><dd>' + aff + (gest ? ' · basata su quote fissi/variabili non confermate' : '') + '</dd></div></dl></div>';
     });
-    if (extra.length) h += '<h3>Dalla gestione operativa</h3>';
-    extra.forEach(function (c) {
-      h += '<div class="carta crit ' + c.gravita + '"><h3><span class="tag ' + c.gravita + '">' + esc(c.modulo) + '</span> ' + esc(c.titolo) + '</h3><dl>' +
-        '<div><dt>Dati che lo dimostrano</dt><dd>' + esc(c.dati) + '</dd></div><div><dt>Causa probabile (ipotesi)</dt><dd>' + esc(c.causa) + '</dd></div>' +
-        '<div><dt>Intervento consigliato</dt><dd>' + esc(c.intervento) + '</dd></div><div><dt>Quanto pesa</dt><dd>' + esc(c.effetto) + '</dd></div>' +
-        '<div><dt>Affidabilità</dt><dd>' + (stato.az.simulata ? 'dati simulati' : 'dipende dalla completezza dei dati gestionali inseriti') + '</dd></div></dl></div>';
-    });
+    h += carteOperative(extra);
     return h + '<p class="muto">Costo dell\'intervento, investimento necessario e tempo di recupero richiedono dati che il bilancio non contiene (preventivi, contratti, piani): verranno chiesti dal modulo investimenti, non stimati a caso.</p>';
   }
 
