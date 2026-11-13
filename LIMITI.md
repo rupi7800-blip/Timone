@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.7.0.
+Ultimo aggiornamento: versione 1.8.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -98,7 +98,7 @@ Ultimo aggiornamento: versione 1.7.0.
 | P3 | Costo dei fermi: se manca il costo orario di fermo della macchina è **stimato** dal margine di contribuzione medio di bilancio, uguale per tutte le macchine, e vale solo se la produzione persa sarebbe stata venduta. | Costo orario di fermo per macchina; ordini e saturazione reali. | 🟡 |
 | P4 | Costo della non qualità calcolato solo se le registrazioni riportano il costo diretto del pezzo; non comprende rilavorazioni, resi e reclami. | Collegamento automatico al costo unitario delle commesse; dati di qualità. | 🔴 |
 | P5 | La capacità utilizzata richiede la capacità mensile della macchina inserita a mano; nessuna pianificazione della produzione né calcolo dei carichi futuri. | Calendario dei turni e ordini da evadere. | 🔴 |
-| P6 | Il modulo «conviene produrre o fermare?» (ordini, scorte, costi evitabili, costi di riavvio) non è presente. | Modulo decisioni produttive, che userà produzione, magazzino e commesse. | 🔴 |
+| P6 | Mancava il modulo «conviene produrre o fermare?». Risolto con il modulo Decisioni produttive (i suoi limiti sono nella sezione Q). | — | 🟢 1.8.0 |
 | P7 | Obiettivo di OEE (65%) e soglie iniziali generali, non di settore (modificabili dall'interfaccia). | Benchmark (B3). | 🟡 |
 | P8 | Produzione per dipendente e per turno non analizzata; consumi idrici per macchina registrabili ma non analizzati. | Dati per turno (P1). | 🔴 |
 | P9 | Macchine e commesse si collegano a mano (una macchina ↔ una risorsa delle commesse); le registrazioni non sono legate alla singola commessa nei calcoli. | Collegamento per codice commessa. | 🔴 |
@@ -119,6 +119,21 @@ Ultimo aggiornamento: versione 1.7.0.
 | V9 | Effetto sui conti dell'azienda limitato al primo anno e a pochi indicatori (EBITDA, debito netto, utile, liquidità): non entra nel budget né negli scenari. | Pianificazione pluriennale (B6). | 🔴 |
 | V10 | Investimenti alternativi tra loro o collegati (uno esclude o richiede l'altro) non gestiti: la classifica li tratta come indipendenti. | Gruppi di alternative. | 🔴 |
 
+## Q. Modulo Decisioni produttive («Produrre o fermare?»)
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| Q1 | **Tutti i dati del caso si inseriscono a mano**: capacità, costi variabili e fissi, scorte e ordini non vengono presi dai moduli Produzione, Magazzino, Commesse e Personale. Gli ordini dei clienti non esistono ancora come dato nella piattaforma. | Precompilazione dai moduli; portafoglio ordini (modulo commerciale). | 🔴 |
+| Q2 | Un caso riguarda **una linea o un prodotto** con un solo prezzo e un solo costo variabile; la domanda è distribuita in parti uguali nei mesi (niente stagionalità, niente mix di prodotti, niente date di consegna). | Domanda mese per mese e per prodotto. | 🔴 |
+| Q3 | Ciò che non si consegna nel mese è considerato **vendita persa**: non sono gestiti consegne in ritardo, penali contrattuali, perdita del cliente. | Regole per ritardi e penali. | 🔴 |
+| Q4 | La quota di costi fissi evitabile con il fermo è un dato dell'utente: **ammortizzatori sociali** (cassa integrazione), ferie forzate, ricollocazione del personale non sono calcolati. | Regole lavoristiche verificate con un consulente del lavoro; collegamento al modulo Personale. | 🔴 |
+| Q5 | Riducendo il ritmo i costi fissi sono considerati invariati; fermo e riavvio sono contati per intero anche se il riavvio cade dopo il periodo. | Costi fissi a scaglioni; orizzonte più lungo. | 🔴 |
+| Q6 | Scorte valorizzate al costo variabile; il rischio di obsolescenza è una percentuale unica inserita dall'utente. | Collegamento alla classificazione del Magazzino. | 🔴 |
+| Q7 | Esternalizzazione con un solo prezzo per unità: non considera capacità, tempi, qualità e minimi d'ordine del fornitore, né i costi di trasporto e controllo. | Dati dei fornitori (E3). | 🔴 |
+| Q8 | Le sei alternative sono fisse: non si possono combinare (ad esempio ridurre per due mesi e poi fermare) né definire un piano personalizzato mese per mese. | Editor del piano di produzione. | 🔴 |
+| Q9 | Le previsioni di vendita sono trattate con un solo confronto (con e senza previsioni), senza probabilità. | Scenari multipli sulla domanda. | 🔴 |
+| Q10 | Il risultato non è collegato alla previsione di cassa né al bilancio dell'azienda: resta un confronto a sé. | Collegamento con previsione di cassa e budget. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -138,5 +153,4 @@ Ultimo aggiornamento: versione 1.7.0.
 ## H. Moduli della specifica non ancora realizzati
 
 App mobile per dipendenti ·
-Finanziamenti, mutui, bandi e agevolazioni · Decisioni produttive (produrre o fermare) ·
-Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.
+Finanziamenti, mutui, bandi e agevolazioni · Sviluppo commerciale e ricerca clienti · Benchmarking e ISA · Pianificazione strategica pluriennale · Collegamenti con gestionali, banche e sensori IoT.

@@ -1,6 +1,6 @@
 # Timone · piattaforma di controllo e analisi aziendale
 
-Versione 1.7.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**.
+Versione 1.8.0 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**.
 
 Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [LIMITI.md](LIMITI.md).
 "Timone" è un nome di lavoro: si cambia in `index.html` e `manifest.json`.
@@ -23,6 +23,7 @@ Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [
 - **Modulo Energia e utenze** (attivabile per azienda): bollette mensili di elettricità, gas, acqua e altri combustibili, importate da Excel/CSV o inserite a mano, per utenza e per utilizzo (produzione, uffici, magazzino, riscaldamento…); consumi, costo unitario reale, composizione della spesa (energia, trasporto, oneri, imposte), fasce orarie, confronto con l'anno precedente; mesi con consumi anomali; potenza impegnata eccessiva o superata; contratti in scadenza; **confronto con le offerte** inserite dall'utente sul costo complessivo, al netto di costi di cambio e penali; collegamento con le commesse (prezzo del kWh usato e kWh attribuiti). I mesi mancanti non vengono stimati.
 - **Modulo Produzione** (attivabile per azienda, per chi lavora con macchine o impianti): registrazioni mensili per macchina importate da Excel/CSV o inserite a mano; ore disponibili, pianificate, operative; disponibilità, performance, qualità e **OEE**; perdite in ore equivalenti con la principale in evidenza; produttività oraria, tempo ciclo effettivo, energia per pezzo, capacità utilizzata; costo dei fermi (inserito oppure stimato dal bilancio, sempre etichettato) e dei pezzi scartati; confronto con le ore macchina delle commesse e con i kWh delle bollette. Senza tempo ciclo standard l'OEE non viene calcolato.
 - **Modulo Investimenti** (attivabile per azienda): per ogni investimento ipotizzato (macchinari, impianti, automazione, software, veicoli, immobili, ampliamenti) flussi di cassa anno per anno, VAN, TIR, tempo di recupero semplice e attualizzato, redditività media, piano di rimborso del finanziamento e copertura della rata, sensibilità («e se i benefici calassero del 10-20-30%?»), effetto su EBITDA, debito netto e liquidità dell'azienda, esito (conviene, conviene con riserva, non conviene) e classifica tra più investimenti. I benefici sono ipotesi dell'utente e sono dichiarati come tali.
+- **Modulo Decisioni produttive – «Produrre o fermare?»** (attivabile per azienda): per una linea o un prodotto, su un periodo di alcuni mesi, simula mese per mese sei alternative (continuare a pieno ritmo, ridurre, produrre solo su ordinazione, produrre in anticipo e poi fermare, fermare temporaneamente, esternalizzare) e per ciascuna calcola risultato economico, effetto sulla cassa, scorte, capitale immobilizzato, costo finanziario, rischio di obsolescenza e vendite perse; distingue i costi fissi evitabili con il fermo da quelli che restano; ripete il confronto con i soli ordini confermati.
 - **Simulazione generale**: generatore di aziende di fantasia (5 settori × 6 situazioni, riproducibili con un seme), collaudo dell'azienda aperta e collaudo massivo del motore.
 - Aggiornamento: l'app resta sulla versione installata finché non si preme "Aggiorna" (compare solo se `versione.json` indica una versione più recente).
 
@@ -44,6 +45,7 @@ Regole applicate ovunque: nessun dato inventato, i vuoti non valgono zero, le st
 | `energia.js`, `ui-energia.js` | modulo Energia e utenze: calcolo, importazione e interfaccia |
 | `produzione.js`, `ui-produzione.js` | modulo Produzione: calcolo, importazione e interfaccia |
 | `investimenti.js`, `ui-investimenti.js` | modulo Investimenti: calcolo e interfaccia |
+| `decisioni.js`, `ui-decisioni.js` | modulo Decisioni produttive: calcolo e interfaccia |
 | `LIMITI.md` | registro dei limiti aperti |
 | `dati.js` | archivio: dispositivo, Supabase cloud, server aziendale |
 | `supabase-setup.sql` | schema del database con isolamento per azienda |
@@ -72,6 +74,7 @@ Il nucleo non va modificato: la scheda compare da sola, le criticità entrano ne
 
 - Motore: 43 test su un caso calcolato a mano + 7.680 controlli su 240 aziende simulate, tutti superati.
 - Commesse: 29 test su un caso calcolato a mano + 1.620 controlli su 90 aziende con commesse simulate (quadratura con l'EBIT, ribaltamento integrale, costi attribuiti entro il bilancio), tutti superati.
+- Decisioni produttive: 41 test (le sei alternative calcolate a mano su un caso) + 288 controlli su 36 aziende con casi simulati, tutti superati.
 - Investimenti: 50 test (VAN, TIR, recupero, rata e casi completi calcolati a mano) + 720 controlli su 90 aziende con investimenti simulati, tutti superati.
 - Produzione: 42 test (OEE, perdite, costo dei fermi e coerenze calcolati a mano, importazione) + 540 controlli su 36 aziende manifatturiere e artigiane simulate, tutti superati.
 - Energia: 41 test (bollette, costo unitario, anomalie, potenza, offerte e penali calcolati a mano, importazione) + 2.772 controlli su 90 aziende con utenze simulate, tutti superati.

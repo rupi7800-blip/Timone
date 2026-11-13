@@ -3,7 +3,7 @@
    la nuova versione viene scaricata solo quando l'utente preme "Aggiorna",
    che cancella questa copia e ricarica la pagina. */
 var CACHE = 'timone-app';
-var FILE = ['./', 'index.html', 'app.js', 'motore.js', 'simulatore.js', 'importa.js', 'xbrl.js', 'commesse.js', 'ui-commesse.js', 'magazzino.js', 'ui-magazzino.js', 'personale.js', 'ui-personale.js', 'energia.js', 'ui-energia.js', 'produzione.js', 'ui-produzione.js', 'investimenti.js', 'ui-investimenti.js', 'dati.js', 'manifest.json', 'icona.svg'];
+var FILE = ['./', 'index.html', 'app.js', 'motore.js', 'simulatore.js', 'importa.js', 'xbrl.js', 'commesse.js', 'ui-commesse.js', 'magazzino.js', 'ui-magazzino.js', 'personale.js', 'ui-personale.js', 'energia.js', 'ui-energia.js', 'produzione.js', 'ui-produzione.js', 'investimenti.js', 'ui-investimenti.js', 'decisioni.js', 'ui-decisioni.js', 'dati.js', 'manifest.json', 'icona.svg'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
