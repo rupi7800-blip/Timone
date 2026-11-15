@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.15.0.
+Ultimo aggiornamento: versione 1.15.1.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -214,7 +214,7 @@ Ultimo aggiornamento: versione 1.15.0.
 | W4 | L'ammissibilità non è verificata: requisiti, regime de minimis, cumulo degli aiuti e Registro nazionale aiuti restano a carico dell'utente e del consulente. | Regole dedicate e consultazione del Registro nazionale aiuti. | 🔴 |
 | W5 | I dati dell'azienda inviati all'assistente passano dal servizio AI scelto (fuori dall'azienda, salvo Ollama); nel piano gratuito Gemini Google può usarli. Nessuna anonimizzazione. | Opzione per inviare solo indici e non importi; informativa privacy (G2). | 🔴 |
 | W6 | Conversazioni e chiavi dei servizi AI stanno solo nel browser di questo dispositivo, senza cifratura; non passano da un dispositivo all'altro. | Archiviazione sul database (A1) con cifratura delle chiavi. | 🔴 |
-| W9 | Passaggio automatico tra servizi: le durate della pausa (da 2 a 60 minuti secondo il guasto) sono fisse; la ricerca bandi può passare solo tra servizi con ricerca web (Gemini e Claude), quindi con uno solo dei due attivo non ha riserva. | Durate configurabili; ricerca web anche con altri servizi. | 🔴 |
+| W9 | Passaggio automatico tra servizi: le durate della pausa (da 2 a 60 minuti secondo il guasto) sono fisse; la ricerca bandi può passare solo tra servizi con ricerca web (Gemini, Groq Compound, Claude). I nomi dei modelli Groq Compound e dei modelli Gemini di riserva non sono stati provati con chiavi reali. | Durate configurabili; ricerca web anche con altri servizi. | 🔴 |
 | W8 | Ricerca semplice nel web: apre il motore di ricerca con i criteri tradotti in parole chiave; i risultati non vengono letti né filtrati da Timone. Per i bandi europei le parole italiane possono escludere pagine solo in inglese. | Lettura diretta delle banche dati ufficiali (W2). | 🔴 |
 | W7 | I bandi in scadenza compaiono nella Diagnosi di ogni esercizio, perché dipendono dalla data di oggi e non dall'anno di bilancio. | Sezione «scadenze» separata nella Diagnosi. | 🔴 |
 
