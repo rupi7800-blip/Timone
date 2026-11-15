@@ -4,7 +4,7 @@ Elenco di tutto ciò che la piattaforma **non fa ancora, fa in modo approssimato
 Si aggiorna a ogni rilascio. Comando di lavoro: **«richiama i limiti»** → l'elenco viene riproposto e si sceglie quali risolvere.
 
 Stato: 🔴 aperto · 🟡 in parte risolto · 🟢 risolto (con versione).
-Ultimo aggiornamento: versione 1.12.0.
+Ultimo aggiornamento: versione 1.13.0.
 
 ## A. Verifiche mancanti (funzioni scritte ma non provate su casi reali)
 
@@ -204,6 +204,18 @@ Ultimo aggiornamento: versione 1.12.0.
 | U10 | È un piano numerico: mancano la parte descrittiva (obiettivi, azioni, responsabili, tempi), la valutazione dell'azienda e un documento esportabile per banche e soci. | Piano industriale completo e stampa dedicata. | 🔴 |
 | U11 | I segnali (patrimonio netto negativo, rate non coperte, debito oltre 5 volte l'EBITDA) sono avvisi sui numeri del piano: non sono una verifica degli obblighi di legge su adeguati assetti e crisi d'impresa. | Verifica con un professionista; regole dedicate. | 🔴 |
 
+## W. Assistente AI e Ricerca bandi
+
+| N. | Limite | Cosa serve per chiuderlo | Stato |
+|---|---|---|---|
+| W1 | Il motore AI è provato solo con un Google Gemini simulato: nessuna chiamata reale a Gemini, Groq, OpenRouter, Claude o Ollama (l'ambiente di sviluppo non raggiunge questi servizi). | Prova con una chiave reale (Gemini è gratuito) sulla versione pubblicata. | 🔴 |
+| W2 | La ricerca bandi dipende dalla ricerca web del servizio AI (solo Gemini o Claude): un bando può mancare, date e importi possono essere letti male. Ogni risultato è «da verificare» e senza link alla fonte viene scartato, ma il link non viene aperto per controllarlo. | Collegamento diretto alle banche dati ufficiali (incentivi.gov.it open data, portale UE Funding & Tenders) se consentito dal browser. | 🔴 |
+| W3 | Bandi comunali e regionali: nessun portale unico; oltre alla ricerca AI c'è solo una ricerca web guidata. | Elenco curato dei portali delle 20 regioni. | 🔴 |
+| W4 | L'ammissibilità non è verificata: requisiti, regime de minimis, cumulo degli aiuti e Registro nazionale aiuti restano a carico dell'utente e del consulente. | Regole dedicate e consultazione del Registro nazionale aiuti. | 🔴 |
+| W5 | I dati dell'azienda inviati all'assistente passano dal servizio AI scelto (fuori dall'azienda, salvo Ollama); nel piano gratuito Gemini Google può usarli. Nessuna anonimizzazione. | Opzione per inviare solo indici e non importi; informativa privacy (G2). | 🔴 |
+| W6 | Conversazioni e chiavi dei servizi AI stanno solo nel browser di questo dispositivo, senza cifratura; non passano da un dispositivo all'altro. | Archiviazione sul database (A1) con cifratura delle chiavi. | 🔴 |
+| W7 | I bandi in scadenza compaiono nella Diagnosi di ogni esercizio, perché dipendono dalla data di oggi e non dall'anno di bilancio. | Sezione «scadenze» separata nella Diagnosi. | 🔴 |
+
 ## G. Piattaforma, vendita e sicurezza
 
 | N. | Limite | Cosa serve per chiuderlo | Stato |
@@ -213,7 +225,7 @@ Ultimo aggiornamento: versione 1.12.0.
 | G3 | In modalità «questo dispositivo» i dati stanno nel browser, senza password né cifratura, e si perdono cancellando i dati del browser. | Database (A1) o cifratura locale. | 🔴 |
 | G4 | Autenticazione a più fattori, registro degli accessi, backup automatici non realizzati. | Configurazione sul database (A1). | 🔴 |
 | G5 | I dati dei moduli (commesse, magazzino, personale) nel database sono salvati in un unico campo dell'azienda, non in tabelle dedicate. | Tabelle per modulo al momento del collegamento a Supabase. | 🔴 |
-| G6 | Motore AI conversazionale solo predisposto (richiede una chiave API a pagamento). | Chiave API e interfaccia domande/risposte. | 🔴 |
+| G6 | Motore AI conversazionale solo predisposto (richiede una chiave API a pagamento). | Chiave API e interfaccia domande/risposte. | 🟢 1.13.0 (vedi sezione W) |
 | G7 | Nessun avviso automatico (email, notifiche push) né report periodici. | Server o funzioni pianificate (A1). | 🔴 |
 | G8 | Una sola valuta, una sola sede, un solo magazzino per azienda; fiscalità solo italiana. | Estensione del modello dati. | 🔴 |
 | G9 | Viste per ruolo (imprenditore, produzione, commerciale…) e cruscotti personalizzabili non presenti. | Configurazione delle viste. | 🔴 |

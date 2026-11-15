@@ -96,7 +96,7 @@
 
   function vistaAgevolazioni() {
     var g = F.analizzaAgevolazioni(st.az, oggi());
-    var h = '<div class="avviso info">Timone non cerca bandi e non ne propone: registra qui le agevolazioni che hai trovato o che ti ha segnalato il consulente, sempre con la <b>fonte ufficiale</b> e la data in cui l\'hai verificata. Senza fonte un\'agevolazione non viene conteggiata.</div>' +
+    var h = '<div class="avviso info">Registra qui le agevolazioni che hai trovato nel modulo Bandi o che ti ha segnalato il consulente, sempre con la <b>fonte ufficiale</b> e la data in cui l\'hai verificata. Senza fonte un\'agevolazione non viene conteggiata.</div>' +
       (d().simulato && d().oggiSimulato ? '<p class="muto">Dati simulati: le scadenze sono calcolate come se oggi fosse il ' + giorno(d().oggiSimulato) + '.</p>' : '') + (T.scrivibile() ? '<div class="riga"><button class="b p" data-a="fiAgNuova">Nuova agevolazione</button></div>' : '');
     if (!g.righe.length) return h + '<div class="carta"><p>Nessuna agevolazione registrata.</p></div>';
     h += '<div class="carta"><table>' + riga('Da valutare o in preparazione', eur(g.potenziale)) + riga('Domande presentate', eur(g.richiesto)) + riga('Concesse, da incassare', eur(g.concesso), 1) + riga('Incassate', eur(g.incassato)) + '</table><p class="muto">Solo le agevolazioni concesse sono un beneficio certo: le altre sono possibilità e non vanno contate nei piani.</p></div>';
