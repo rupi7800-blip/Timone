@@ -4,7 +4,7 @@
    rate dei 12 mesi successivi, effetto di un aumento dei tassi; confronta i piani con i debiti e gli interessi di bilancio.
    Simula estinzione anticipata e rinegoziazione e confronta le offerte di finanziamento.
    Le agevolazioni (bandi, contributi, crediti d'imposta, garanzie) sono un registro compilato dall'utente con fonte,
-   data di verifica e requisiti: il modulo non cerca bandi e non ne inventa.
+   data di verifica e requisiti (la ricerca dei bandi è nel modulo Bandi): il modulo non ne inventa.
    Date dei finanziamenti nel formato "AAAA-MM"; tassi come frazione annua nominale (0,05 = 5%). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./motore.js'));
