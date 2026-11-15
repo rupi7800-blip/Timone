@@ -44,8 +44,20 @@
   function leggiConf() { try { return JSON.parse(localStorage.getItem(CHIAVE)) || {}; } catch (e) { return {}; } }
   function config(grezza) {
     var c = grezza || leggiConf(), servizi = {};
-    ORDINE.forEach(function (id) { servizi[id] = Object.assign({ attivo: false, chiave: '', modello: '', base: '' }, (c.servizi || {})[id]); });
+    ORDINE.forEach(function (id) { servizi[id] = Object.assign({ attivo: false, chiave: '', modello: '', base: '', elenco: [] }, (c.servizi || {})[id]); });
     return { principale: SERVIZI[c.principale] ? c.principale : 'gemini', riserva: c.riserva !== false, servizi: servizi };
+  }
+  /* Modelli proposti nel menu a tendina di ogni servizio: quelli predefiniti, quelli letti dal servizio con
+     «Aggiorna elenco modelli» (memorizzati) e quello scelto. Vale per ogni servizio presente in SERVIZI, anche
+     per quelli aggiunti in futuro: basta indicarne i modelli predefiniti. */
+  function elencoModelli(id, cfg) {
+    var c = (cfg || config()).servizi[id] || {}, tutti = (SERVIZI[id] ? SERVIZI[id].modelli : []).concat(c.elenco || [], c.modello ? [c.modello] : []);
+    return tutti.filter(function (m, i) { return m && tutti.indexOf(m) === i; });
+  }
+  // memorizza l'elenco letto dal servizio, senza toccare il resto della configurazione salvata
+  function memorizzaElenco(id, elenco) {
+    var c = leggiConf(); c.servizi = c.servizi || {}; c.servizi[id] = Object.assign({}, c.servizi[id], { elenco: (elenco || []).filter(function (m) { return typeof m === 'string' && m; }).slice(0, 300) });
+    return salvaConfig(c);
   }
   function salvaConfig(c) { try { localStorage.setItem(CHIAVE, JSON.stringify(c)); return true; } catch (e) { return false; } }
   function usabile(id, cfg) { var s = SERVIZI[id], c = cfg.servizi[id]; return c.attivo && (!s.chiave || !!c.chiave) && (id !== 'custom' || !!c.base); }
@@ -265,6 +277,6 @@
     return id === 'openrouter' ? ids.filter(function (x) { return /:free$/.test(x); }) : ids;
   }
 
-  root.TimoneAI = { SERVIZI: SERVIZI, ORDINE: ORDINE, config: config, salvaConfig: salvaConfig, disponibile: disponibile, attivi: attivi, nome: nome,
+  root.TimoneAI = { SERVIZI: SERVIZI, ORDINE: ORDINE, config: config, salvaConfig: salvaConfig, elencoModelli: elencoModelli, memorizzaElenco: memorizzaElenco, disponibile: disponibile, attivi: attivi, nome: nome,
     chiedi: chiedi, chat: chat, prova: prova, modelli: modelli, leggiJSON: leggiJSON, adatta: adatta };
 })(typeof self !== 'undefined' ? self : this);

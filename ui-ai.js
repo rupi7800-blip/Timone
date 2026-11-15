@@ -80,19 +80,31 @@
         '<p class="muto">' + esc(s.nota) + (s.link ? ' <a href="' + esc(s.link) + '" target="_blank" rel="noopener">Ottieni la chiave</a>' : '') + '</p>' +
         '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="aiAttivo"' + (x.attivo ? ' checked' : '') + '> Usa questo servizio</label><div class="riga" style="margin-top:6px">' +
         (s.chiave || id === 'custom' ? '<div class="campo"><label>Chiave API</label><input type="password" class="aiChiave" autocomplete="off" value="' + esc(x.chiave) + '"></div>' : '') +
-        '<div class="campo"><label>Modello</label><input type="text" class="aiModello" list="aiMod_' + id + '" placeholder="' + esc(s.modello) + '" value="' + esc(x.modello) + '"><datalist id="aiMod_' + id + '">' + s.modelli.concat(st['aiModelli_' + id] || []).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (mm) { return '<option value="' + esc(mm) + '">'; }).join('') + '</datalist></div>' +
+        '<div class="campo"><label>Modello</label>' + tendinaModelli(id, x.modello, AI.elencoModelli(id, c)) + '</div>' +
         (mostraBase ? '<div class="campo"><label>Indirizzo</label><input type="text" class="aiBase" placeholder="' + esc(s.base || 'https://…/v1') + '" value="' + esc(x.base) + '"></div>' : '') + '</div>' +
         '<div class="riga" style="margin-top:8px"><button class="b p s" data-a="aiProva" data-id="' + id + '">Prova collegamento</button>' + (id === 'pollinations' ? '' : '<button class="b p s" data-a="aiModelli" data-id="' + id + '">Aggiorna elenco modelli</button>') + '</div><div class="muto" id="aiEsito_' + id + '"></div></div></details>';
     });
     return h + '<div class="riga"><button class="b" data-a="aiSalva">Salva servizi AI</button></div>';
   }
 
+  /* Menu a tendina dei modelli, uguale per ogni servizio AI (anche per quelli aggiunti in futuro): «predefinito»,
+     i modelli noti e memorizzati, e «Altro modello…» per scriverne uno a mano. */
+  function tendinaModelli(id, scelto, elenco) {
+    var pred = AI.SERVIZI[id].modello, altro = !!scelto && elenco.indexOf(scelto) < 0;
+    return '<select class="aiModello" data-c="aiModelloScelta" id="aiMod_' + id + '">' +
+      (pred ? '<option value="">Predefinito (' + esc(pred) + ')</option>' : '<option value="">— scegli —</option>') +
+      elenco.map(function (m) { return '<option value="' + esc(m) + '"' + (m === scelto ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') +
+      '<option value="__altro"' + (altro ? ' selected' : '') + '>Altro modello…</option></select>' +
+      '<input type="text" class="aiModelloAltro" placeholder="nome del modello" value="' + esc(altro ? scelto : '') + '" style="margin-top:6px;' + (altro ? '' : 'display:none') + '">';
+  }
+  function modelloScelto(el) { var t = el.querySelector('.aiModello'); if (!t) return ''; return t.value === '__altro' ? el.querySelector('.aiModelloAltro').value.trim() : t.value; }
+
   // configurazione letta dalla pagina (anche prima di salvarla)
   function raccogli() {
     var servizi = {};
     document.querySelectorAll('[data-servizio]').forEach(function (el) {
       var v = function (c) { var i = el.querySelector(c); return i ? i.value.trim() : ''; };
-      servizi[el.dataset.servizio] = { attivo: el.querySelector('.aiAttivo').checked, chiave: v('.aiChiave'), modello: v('.aiModello'), base: v('.aiBase') };
+      servizi[el.dataset.servizio] = { attivo: el.querySelector('.aiAttivo').checked, chiave: v('.aiChiave'), modello: modelloScelto(el), base: v('.aiBase'), elenco: AI.config().servizi[el.dataset.servizio].elenco };
     });
     return { principale: $('#aiPrincipale').value, riserva: $('#aiRiserva').checked, servizi: servizi };
   }
@@ -128,16 +140,25 @@
     },
     aiModelli: function (x) {
       var out = $('#aiEsito_' + x.id); out.textContent = 'Lettura dei modelli…';
-      AI.modelli(x.id, raccogli()).then(function (l) { st['aiModelli_' + x.id] = l; var dl = document.getElementById('aiMod_' + x.id); if (dl) dl.innerHTML = l.map(function (mm) { return '<option value="' + esc(mm) + '">'; }).join(''); out.textContent = l.length + ' modelli disponibili: scegli dal campo Modello.'; })
-        .catch(function (e) { out.innerHTML = '<span class="giu">' + esc(e.message) + '</span>'; });
+      AI.modelli(x.id, raccogli()).then(function (l) {
+        AI.memorizzaElenco(x.id, l); // l'elenco resta nel menu a tendina anche le volte successive
+        var el = document.querySelector('[data-servizio="' + x.id + '"]'), scelto = modelloScelto(el), box = el.querySelector('.aiModello').parentNode;
+        box.innerHTML = '<label>Modello</label>' + tendinaModelli(x.id, scelto, AI.elencoModelli(x.id));
+        out.textContent = l.length + ' modelli disponibili e memorizzati: scegli dal menu Modello.';
+      }).catch(function (e) { out.innerHTML = '<span class="giu">' + esc(e.message) + '</span>'; });
     }
+
   };
   document.addEventListener('keydown', function (ev) { if (ev.target && ev.target.id === 'aiDomanda' && ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); azioni.aiInvia(); } });
+
+  var cambi = {
+    aiModelloScelta: function (e) { var a = e.parentNode.querySelector('.aiModelloAltro'); a.style.display = e.value === '__altro' ? '' : 'none'; if (e.value === '__altro') a.focus(); }
+  };
 
   T.registra({
     id: 'assistente', titolo: 'Assistente AI', senzaEsercizi: true,
     descrizione: 'Domande in linguaggio naturale sull\'azienda: il motore AI (Gemini, Groq, OpenRouter, Mistral, Claude, Ollama…) conosce bilanci, indici e criticità. Servizi scelti dall\'utente, chiavi solo su questo dispositivo.',
-    vista: vista, azioni: azioni,
+    vista: vista, azioni: azioni, cambi: cambi,
     contesto: contesto
   });
 })();
