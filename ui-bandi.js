@@ -112,11 +112,12 @@
     baCerca: function () {
       var f = B.filtriValidi(filtri()), p = B.profilo(st.az), oggiR = oggi();
       st.bandiAttesa = true; T.disegna();
-      AI.chiedi({ sistema: 'Ruolo: esperto di finanza agevolata italiana ed europea. Cerca con lo strumento di ricerca web e usa solo pagine ufficiali (enti, ministeri, regioni, comuni, Camere di commercio, Commissione europea).', testo: B.richiesta(f, p, oggiR), schema: B.SCHEMA, web: true, maxToken: 12000 })
+      AI.chiedi({ sistema: 'Ruolo: esperto di finanza agevolata italiana ed europea. Cerca con lo strumento di ricerca web e usa solo pagine ufficiali (enti, ministeri, regioni, comuni, Camere di commercio, Commissione europea).', testo: B.richiesta(f, p, oggiR), schema: B.SCHEMA, web: true, maxToken: 12000,
+        suCambio: function (da, a, motivo) { T.toast(AI.nome(da) + ' non utilizzabile (' + motivo + '): passo a ' + AI.nome(a)); } })
         .then(function (x) {
           var r = B.risultati(x.json.bandi, 'ricerca AI · ' + AI.nome(x.servizio));
           st.bandiRis = { bandi: B.ordina(r.bandi, oggiR), scartati: r.scartati, nota: x.json.nota, fonti: x.fonti || [], servizio: x.servizio, quando: oggiR };
-          T.toast(r.bandi.length ? r.bandi.length + ' bandi trovati: verifica sempre la fonte' : 'Nessun bando trovato con questi filtri');
+          T.toast((r.bandi.length ? r.bandi.length + ' bandi trovati: verifica sempre la fonte' : 'Nessun bando trovato con questi filtri') + (x.saltati.length ? ' · risposta da ' + AI.nome(x.servizio) : ''));
         })
         .catch(function (e) { T.toast(e.message); })
         .then(function () { st.bandiAttesa = false; if (st.scheda === 'bandi') ridisegna(); });

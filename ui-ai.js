@@ -48,7 +48,7 @@
     var io = m.role === 'user';
     return '<div class="carta" style="' + (io ? 'background:var(--acc2);margin-left:15%' : 'margin-right:5%') + '">' + (io ? '<p>' + esc(m.content) + '</p>' : ricco(m.content)) +
       (m.fonti && m.fonti.length ? '<p class="muto"><b>Fonti:</b> ' + m.fonti.map(function (f) { return '<a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + esc(f.titolo || 'fonte') + '</a>'; }).join(' · ') + '</p>' : '') +
-      (m.servizio ? '<p class="muto" style="font-size:11px">' + esc(AI.nome(m.servizio)) + '</p>' : '') + '</div>';
+      (m.servizio ? '<p class="muto" style="font-size:11px">' + esc(AI.nome(m.servizio)) + (m.saltati && m.saltati.length ? ' · al posto di ' + esc(m.saltati.map(function (x) { return AI.nome(x.servizio) + ' (' + x.motivo + ')'; }).join(', ')) : '') + '</p>' : '') + '</div>';
   }
 
   // ------------------------------------------------------------ viste
@@ -73,10 +73,12 @@
     var h = '<div class="carta"><div class="riga"><h3 style="margin:0">Servizi AI</h3><span class="sp"></span>' + (AI.disponibile() ? '<span class="tag ok">attivo</span>' : '<span class="tag giallo">non configurato</span>') + '</div>' +
       '<p class="muto">Per iniziare gratis: crea una chiave su <a href="' + AI.SERVIZI.gemini.link + '" target="_blank" rel="noopener">Google AI Studio</a> (un minuto, senza carta) e incollala in Google Gemini. Le chiavi restano solo su questo dispositivo e non entrano nelle esportazioni. La ricerca bandi richiede Gemini o Claude (ricerca web).</p>' +
       '<div class="riga"><div class="campo"><label>Servizio principale</label><select id="aiPrincipale">' + AI.ORDINE.map(function (id) { return '<option value="' + id + '"' + (c.principale === id ? ' selected' : '') + '>' + esc(AI.SERVIZI[id].nome) + ' · ' + esc(AI.SERVIZI[id].costo) + '</option>'; }).join('') + '</select></div></div>' +
-      '<label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="aiRiserva"' + (c.riserva ? ' checked' : '') + '> Se il servizio principale non risponde, usa gli altri attivi</label></div>';
+      '<label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="aiRiserva"' + (c.riserva ? ' checked' : '') + '> Se un servizio non è utilizzabile, passa in automatico a un altro dei servizi attivi</label>' +
+      '<p class="muto">Il servizio che non risponde (limite raggiunto, chiave rifiutata, modello non trovato, errore) resta in pausa per qualche minuto e le richieste partono dagli altri. Cambiando chiave o modello la pausa si annulla.</p></div>';
     AI.ORDINE.forEach(function (id) {
       var s = AI.SERVIZI[id], x = c.servizi[id], mostraBase = id === 'custom' || id === 'ollama';
-      h += '<details class="carta" data-servizio="' + id + '"' + (x.attivo ? ' open' : '') + '><summary><span class="nome"><b>' + esc(s.nome) + '</b> <span class="muto">' + esc(s.costo) + (s.web ? ' · ricerca web' : '') + '</span></span>' + (AI.disponibile() && x.attivo ? '<span class="tag ok">attivo</span>' : '') + '</summary><div class="spiega">' +
+      h += '<details class="carta" data-servizio="' + id + '"' + (x.attivo ? ' open' : '') + '><summary><span class="nome"><b>' + esc(s.nome) + '</b> <span class="muto">' + esc(s.costo) + (s.web ? ' · ricerca web' : '') + '</span></span>' + (x.attivo ? (AI.pausa(id) ? '<span class="tag giallo">in pausa</span>' : AI.disponibile() ? '<span class="tag ok">attivo</span>' : '') : '') + '</summary><div class="spiega">' +
+        (x.attivo && AI.pausa(id) ? '<div class="avviso">Non utilizzabile (' + esc(AI.pausa(id).motivo) + '): in pausa fino alle ' + new Date(AI.pausa(id).fino).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + ', intanto rispondono gli altri servizi attivi. <button class="b p s" data-a="aiRiattiva" data-id="' + id + '">Riprova ora</button></div>' : '') +
         '<p class="muto">' + esc(s.nota) + (s.link ? ' <a href="' + esc(s.link) + '" target="_blank" rel="noopener">Ottieni la chiave</a>' : '') + '</p>' +
         '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="aiAttivo"' + (x.attivo ? ' checked' : '') + '> Usa questo servizio</label><div class="riga" style="margin-top:6px">' +
         (s.chiave || id === 'custom' ? '<div class="campo"><label>Chiave API</label><input type="password" class="aiChiave" autocomplete="off" value="' + esc(x.chiave) + '"></div>' : '') +
@@ -116,8 +118,10 @@
     var box = document.createElement('div'); box.className = 'carta'; box.style.marginRight = '5%'; box.innerHTML = '<p class="muto">Sto pensando…</p>';
     var chat = $('#aiChat'); if (chat) { chat.appendChild(box); box.scrollIntoView({ block: 'end' }); }
     var acc = '';
-    AI.chat({ storia: m.slice(-12), contesto: contesto(), web: web, suTesto: function (t) { acc += t; box.innerHTML = ricco(acc); } })
-      .then(function (r) { m.push({ role: 'assistant', content: r.testo || acc, fonti: r.fonti, servizio: r.servizio }); salvaChat(); })
+    AI.chat({ storia: m.slice(-12), contesto: contesto(), web: web, suTesto: function (t) { acc += t; box.innerHTML = ricco(acc); },
+      suRicomincia: function () { acc = ''; },
+      suCambio: function (da, a, motivo) { box.innerHTML = '<p class="muto">' + esc(AI.nome(da)) + ' non utilizzabile (' + esc(motivo) + '): passo a ' + esc(AI.nome(a)) + '…</p>'; } })
+      .then(function (r) { m.push({ role: 'assistant', content: r.testo || acc, fonti: r.fonti, servizio: r.servizio, saltati: r.saltati }); salvaChat(); })
       .catch(function (e) { m.pop(); T.toast(e.message); st.aiBozza = testo; })
       .then(function () { st.aiAttesa = false; if (st.scheda !== 'assistente') return; T.disegna(); var d = $('#aiDomanda'); if (d && st.aiBozza) { d.value = st.aiBozza; st.aiBozza = null; } var c = $('#aiChat'); if (c && c.lastElementChild) c.lastElementChild.scrollIntoView({ block: 'end' }); });
   }
@@ -133,9 +137,10 @@
       if (!AI.salvaConfig(c)) { T.toast('Impossibile salvare su questo dispositivo'); return; }
       T.disegna(); T.toast(AI.disponibile() ? 'Servizi AI salvati' : 'Salvato: manca ancora una chiave valida');
     },
+    aiRiattiva: function (x) { AI.riattiva(x.id); T.disegna(); T.toast(AI.nome(x.id) + ' di nuovo disponibile'); },
     aiProva: function (x) {
       var out = $('#aiEsito_' + x.id); out.textContent = 'Prova in corso…';
-      AI.prova(x.id, raccogli()).then(function (r) { out.innerHTML = '<span class="su">✓ Collegato</span> · ' + esc(r.modello) + ' · ' + r.secondi + ' s · «' + esc(r.risposta) + '»'; })
+      AI.prova(x.id, raccogli()).then(function (r) { AI.riattiva(x.id); out.innerHTML = '<span class="su">✓ Collegato</span> · ' + esc(r.modello) + ' · ' + r.secondi + ' s · «' + esc(r.risposta) + '»'; })
         .catch(function (e) { out.innerHTML = '<span class="giu">' + esc(e.message) + '</span>'; });
     },
     aiModelli: function (x) {
