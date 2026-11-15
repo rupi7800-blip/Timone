@@ -1,6 +1,7 @@
 /* Timone · modulo Ricerca bandi (comunali, regionali, nazionali, europei)
-   Funzioni pure. Prepara la ricerca (filtri per livello, tipo di bando e settore, profilo dell'azienda), controlla e
-   normalizza i bandi trovati dal motore AI con ricerca web, li filtra e ordina per scadenza, gestisce l'archivio dei
+   Funzioni pure. Prepara la ricerca (filtri per livello, tipo di bando, settore, solo bandi aperti, profilo
+   dell'azienda) in due modi: ricerca semplice sul web (link al motore di ricerca con tutti i criteri) e ricerca con
+   il motore AI. Controlla e normalizza i bandi trovati dal motore AI, li filtra e ordina per scadenza, gestisce l'archivio dei
    bandi salvati e ne ricava le criticità (scadenze vicine) e la scheda da passare al registro agevolazioni.
    Regole: un bando senza link alla fonte viene scartato; date non valide restano vuote; nulla viene stimato.
    Ogni bando trovato resta "da verificare sulla fonte ufficiale". */
@@ -25,8 +26,16 @@
   // settore dell'azienda (Impostazioni) → settore dei bandi proposto
   var DA_SETTORE_AZIENDA = { manifatturiera: 'manifattura', commerciale: 'commercio', servizi: 'servizi', artigiana: 'artigianato', professionista: 'servizi' };
   var PARAM = { giorniScadenza: 30 };
+  var MOTORI = { google: 'Google', bing: 'Bing', duckduckgo: 'DuckDuckGo' };
+  // parole usate nella ricerca semplice sul web per rispettare i criteri scelti
+  var PAROLE_TIPO = { fondo_perduto: '"fondo perduto"', credito_imposta: '"credito d\'imposta"', finanziamento_agevolato: '"finanziamento agevolato"', garanzia: 'garanzia', voucher: 'voucher',
+    premio: '(premio OR concorso)', gara: '(gara OR appalto)', altro: '' };
+  var PAROLE_SETTORE = { agricoltura: '(agricoltura OR agricole)', manifattura: '(manifattura OR manifatturiere OR industria)', commercio: 'commercio', turismo: '(turismo OR turistiche)', servizi: 'servizi',
+    edilizia: 'edilizia', digitale: '(digitale OR digitalizzazione)', energia: '(energia OR energetica OR ambiente)', ricerca: '(ricerca OR innovazione)', cultura: 'cultura',
+    sociale: '("terzo settore" OR sociale)', trasporti: '(trasporti OR logistica)', artigianato: '(artigianato OR artigiane)', formazione: '(formazione OR assunzioni)' };
+  var PAROLE_APERTI = '(aperto OR scadenza OR "domande entro" OR sportello) -graduatoria -"bando chiuso" -scaduto';
 
-  // portali ufficiali sempre consultabili; per comune e regione la ricerca è guidata
+  // portali ufficiali sempre consultabili (per comune e regione c'è la ricerca semplice sul web)
   var PORTALI = [
     { livello: 'nazionale', nome: 'Incentivi.gov.it (Ministero delle Imprese)', url: 'https://www.incentivi.gov.it/' },
     { livello: 'nazionale', nome: 'Invitalia', url: 'https://www.invitalia.it/' },
@@ -135,15 +144,28 @@
     var peso = function (b) { var s = statoDi(b, oggi); return s === 'scaduto' ? 3 : b.scadenza ? 0 : s === 'in_arrivo' ? 1 : 2; };
     return lista.slice().sort(function (a, b) { return peso(a) - peso(b) || String(a.scadenza || '9999').localeCompare(String(b.scadenza || '9999')) || a.titolo.localeCompare(b.titolo); });
   }
-  // link di ricerca guidata per i livelli scelti (comune e regione non hanno un portale unico)
-  function portali(f, p) {
-    f = filtriValidi(f);
-    var cerca = function (q) { return 'https://www.google.com/search?q=' + encodeURIComponent(q); };
-    var extra = [f.tipo ? TIPI[f.tipo] : '', f.settore ? SETTORI[f.settore] : '', f.testo].filter(Boolean).join(' ');
-    var out = [];
-    if (f.livelli.indexOf('comunale') >= 0 && p.comune) out.push({ livello: 'comunale', nome: 'Bandi del Comune di ' + p.comune + ' (ricerca)', url: cerca('bandi contributi imprese Comune di ' + p.comune + ' ' + extra) });
-    if (f.livelli.indexOf('regionale') >= 0 && p.regione) out.push({ livello: 'regionale', nome: 'Bandi della Regione ' + p.regione + ' (ricerca)', url: cerca('bandi aperti imprese Regione ' + p.regione + ' ' + extra) });
-    return out.concat(PORTALI.filter(function (x) { return f.livelli.indexOf(x.livello) >= 0; }));
+  // portali ufficiali dei livelli scelti
+  function portali(f) { f = filtriValidi(f); return PORTALI.filter(function (x) { return f.livelli.indexOf(x.livello) >= 0; }); }
+
+  /* Ricerca semplice sul web: per ogni livello scelto una ricerca che rispetta i criteri (tipo, settore, parole chiave,
+     solo aperti) e restringe il campo al territorio o ai siti istituzionali. Si apre nel motore di ricerca scelto. */
+  function ricercaWeb(f, p, oggi, motore) {
+    f = filtriValidi(f); motore = MOTORI[motore] ? motore : 'google';
+    var anno = Number(String(oggi).slice(0, 4)), comuni = ['bando', f.tipo ? PAROLE_TIPO[f.tipo] : '', f.settore ? PAROLE_SETTORE[f.settore] : '', f.testo,
+      f.soloAperti && anno ? '(' + anno + ' OR ' + (anno + 1) + ')' : '', f.soloAperti ? PAROLE_APERTI : ''];
+    var ambito = {
+      comunale: p.comune ? '"Comune di ' + p.comune + '" imprese' : null,
+      regionale: p.regione ? '"Regione ' + p.regione + '" imprese' : null,
+      nazionale: 'imprese (site:gov.it OR site:invitalia.it OR site:camcom.it)',
+      europeo: '(bando OR call) site:europa.eu'
+    };
+    return f.livelli.map(function (l) {
+      if (!ambito[l]) return { livello: l, query: '', url: '', manca: l === 'comunale' ? 'Indica il comune della sede.' : 'Indica la regione della sede.' };
+      var q = [ambito[l]].concat(comuni).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(), e = encodeURIComponent(q);
+      var url = motore === 'bing' ? 'https://www.bing.com/search?q=' + e : motore === 'duckduckgo' ? 'https://duckduckgo.com/?q=' + e
+        : 'https://www.google.com/search?q=' + e + (f.soloAperti ? '&tbs=qdr:y' : ''); // con Google, per i bandi aperti solo pagine dell'ultimo anno
+      return { livello: l, query: q, url: url, manca: '' };
+    });
   }
 
   // ------------------------------------------------------------ archivio
@@ -201,8 +223,8 @@
     return esiti;
   }
 
-  return { LIVELLI: LIVELLI, TIPI: TIPI, SETTORI: SETTORI, STATI: STATI, VALUTAZIONI: VALUTAZIONI, DIMENSIONI: DIMENSIONI, REGIONI: REGIONI, PORTALI: PORTALI, SCHEMA: SCHEMA, PARAM: PARAM,
+  return { LIVELLI: LIVELLI, TIPI: TIPI, SETTORI: SETTORI, STATI: STATI, VALUTAZIONI: VALUTAZIONI, DIMENSIONI: DIMENSIONI, REGIONI: REGIONI, PORTALI: PORTALI, SCHEMA: SCHEMA, PARAM: PARAM, MOTORI: MOTORI,
     vuoto: vuoto, dati: dati, profilo: profilo, filtriValidi: filtriValidi, avvisiRicerca: avvisiRicerca, richiesta: richiesta, normalizza: normalizza, risultati: risultati,
-    statoDi: statoDi, filtra: filtra, ordina: ordina, portali: portali, trova: trova, salva: salva, analizza: analizza, criticita: criticita, agevolazione: agevolazione,
+    statoDi: statoDi, filtra: filtra, ordina: ordina, portali: portali, ricercaWeb: ricercaWeb, trova: trova, salva: salva, analizza: analizza, criticita: criticita, agevolazione: agevolazione,
     simula: simula, collaudo: collaudo, dataIso: dataIso };
 });

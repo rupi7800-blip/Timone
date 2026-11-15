@@ -38,16 +38,28 @@
       '<div class="campo"><label>Settore</label><select data-c="baFiltro" data-k="settore">' + opzioni(B.SETTORI, f.settore, 'Tutti i settori') + '</select></div>' +
       '<div class="campo"><label>Parole chiave</label><input type="text" data-c="baFiltro" data-k="testo" value="' + esc(f.testo) + '" placeholder="es. macchinari, export, assunzioni"></div></div>' +
       '<label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" data-c="baFiltro" data-k="soloAperti"' + (f.soloAperti ? ' checked' : '') + '> Solo bandi aperti o in arrivo</label>';
-    if (conAi) {
-      B.avvisiRicerca(f, p).forEach(function (a) { h += '<div class="avviso">' + esc(a) + '</div>'; });
-      if (!AI.disponibile(true)) h += '<div class="avviso info">La ricerca automatica usa il motore AI con ricerca web: attiva <b>Google Gemini</b> (gratuito) o Claude in <button class="b p s" data-a="aiApriServizi">Assistente AI → Servizi AI</button>. Nel frattempo puoi usare i portali qui sotto.</div>';
-      h += '<div class="riga" style="margin-top:10px"><button class="b" data-a="baCerca"' + (st.bandiAttesa || !AI.disponibile(true) ? ' disabled' : '') + '>' + (st.bandiAttesa ? 'Ricerca in corso…' : 'Cerca con l\'AI') + '</button></div>';
-    }
-    return h + '</div>';
+    if (conAi) B.avvisiRicerca(f, p).forEach(function (a) { h += '<div class="avviso">' + esc(a) + '</div>'; });
+    return h + '<p class="muto">Gli stessi criteri valgono per la ricerca semplice nel web e per quella con l\'AI.</p></div>';
+  }
+
+  // ricerca semplice: per ogni livello una ricerca sul web con tutti i criteri, nel motore scelto
+  function cartaWeb() {
+    var f = filtri(), motore = st.bandiMotore || 'google', righe = B.ricercaWeb(f, B.profilo(st.az), oggi(), motore);
+    return '<div class="carta"><h3 style="margin-top:0">Ricerca semplice nel web</h3><p class="muto">Non serve l\'AI: si apre una ricerca per ogni livello scelto, con tipo, settore, parole chiave e «solo bandi aperti». I risultati sono quelli del motore di ricerca: controlla sempre la pagina dell\'ente.</p>' +
+      '<div class="riga"><div class="campo"><label>Motore di ricerca</label><select data-c="baMotore">' + opzioni(B.MOTORI, motore) + '</select></div></div>' +
+      righe.map(function (r) {
+        return '<div style="margin-top:10px">' + (r.url ? '<a class="b p" href="' + esc(r.url) + '" target="_blank" rel="noopener">Cerca bandi ' + esc(B.LIVELLI[r.livello].toLowerCase()) + '</a><p class="muto" style="word-break:break-word;margin-top:4px">' + esc(r.query) + '</p>'
+          : '<span class="tag">' + esc(B.LIVELLI[r.livello]) + '</span> <span class="muto">' + esc(r.manca) + '</span>') + '</div>';
+      }).join('') + '</div>';
+  }
+  function cartaAi() {
+    var h = '<div class="carta"><h3 style="margin-top:0">Ricerca con l\'AI</h3><p class="muto">Il motore AI cerca sul web e restituisce schede con scadenza, importo, requisiti e link alla fonte, già filtrate secondo i criteri.</p>';
+    if (!AI.disponibile(true)) h += '<div class="avviso info">Serve un servizio AI con ricerca web: attiva <b>Google Gemini</b> (gratuito) o Claude in <button class="b p s" data-a="aiApriServizi">Assistente AI → Servizi AI</button>. Nel frattempo usa la ricerca semplice qui sopra.</div>';
+    return h + '<div class="riga"><button class="b" data-a="baCerca"' + (st.bandiAttesa || !AI.disponibile(true) ? ' disabled' : '') + '>' + (st.bandiAttesa ? 'Ricerca in corso…' : 'Cerca con l\'AI') + '</button></div></div>';
   }
 
   function vistaCerca() {
-    var f = filtri(), p = B.profilo(st.az), R = st.bandiRis, h = cartaFiltri(true);
+    var f = filtri(), R = st.bandiRis, h = cartaFiltri(true) + cartaWeb() + cartaAi();
     if (st.bandiAttesa) h += '<div class="carta"><p>Ricerca sul web in corso: può richiedere fino a un minuto.</p></div>';
     else if (R) {
       var lista = B.ordina(B.filtra(R.bandi, f, oggi()), oggi());
@@ -58,8 +70,9 @@
       lista.forEach(function (b) { h += scheda(b, false); });
       if (R.fonti && R.fonti.length) h += '<div class="carta"><h3 style="margin-top:0">Pagine consultate</h3><p class="muto">' + R.fonti.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.titolo || 'fonte') + '</a>'; }).join(' · ') + '</p></div>';
     }
-    h += '<div class="carta"><h3 style="margin-top:0">Portali ufficiali</h3><p class="muto">Per comune e regione si apre una ricerca guidata con i filtri scelti; per Stato e Unione europea i portali istituzionali.</p><div class="lista">' +
-      B.portali(f, p).map(function (x) { return '<a class="b s p" style="display:block;margin:6px 0" href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(B.LIVELLI[x.livello]) + ' · ' + esc(x.nome) + '</a>'; }).join('') + '</div></div>';
+    var po = B.portali(f);
+    if (po.length) h += '<div class="carta"><h3 style="margin-top:0">Portali ufficiali</h3><p class="muto">Portali istituzionali dei livelli scelti, da consultare direttamente.</p><div class="lista">' +
+      po.map(function (x) { return '<a class="b s p" style="display:block;margin:6px 0" href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(B.LIVELLI[x.livello]) + ' · ' + esc(x.nome) + '</a>'; }).join('') + '</div></div>';
     return h;
   }
 
@@ -121,6 +134,7 @@
   var cambi = {
     baProfilo: function (e) { var p = d().profilo; p[e.dataset.k] = String(e.value).trim().slice(0, 80); T.salva(); ridisegna(); },
     baFiltro: function (e) { var f = filtri(); f[e.dataset.k] = e.type === 'checkbox' ? e.checked : String(e.value).trim(); ridisegna(); },
+    baMotore: function (e) { st.bandiMotore = e.value; ridisegna(); },
     baLivello: function (e) { var f = filtri(); f.livelli = f.livelli.filter(function (l) { return l !== e.value; }); if (e.checked) f.livelli.push(e.value); ridisegna(); },
     baValuta: function (e) { var b = d().salvati.filter(function (y) { return y.id === e.dataset.id; })[0]; if (b && B.VALUTAZIONI[e.value]) { b.valutazione = e.value; T.salva(); ridisegna(); } }
   };

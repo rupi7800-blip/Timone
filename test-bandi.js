@@ -55,9 +55,26 @@ az.bandi = { profilo: { regione: 'Toscana', comune: 'Prato', dimensione: 'piccol
 vero('nessun avviso con profilo completo', B.avvisiRicerca({}, p).length === 0);
 const q = B.richiesta({ livelli: ['comunale', 'europeo'], tipo: 'voucher', settore: 'commercio', testo: 'vetrine' }, p, OGGI);
 vero('la richiesta contiene comune, tipo, settore, data e regola sulle fonti', /Comune di Prato/.test(q) && /Voucher/.test(q) && /Commercio/.test(q) && q.indexOf(OGGI) >= 0 && /link alla pagina ufficiale/.test(q) && !/Regione Toscana/.test(q));
-const po = B.portali({ livelli: ['comunale', 'regionale'] }, p);
-vero('portali: ricerca guidata per comune e regione', po.length === 2 && /Prato/.test(decodeURIComponent(po[0].url)) && /Toscana/.test(decodeURIComponent(po[1].url)));
-vero('portali nazionali ed europei', B.portali({ livelli: ['nazionale', 'europeo'] }, p).every(x => /^https:\/\//.test(x.url) && /nazionale|europeo/.test(x.livello)));
+vero('richiesta AI: solo aperti / anche chiusi', /Solo bandi aperti/.test(q) && /anche bandi chiusi/.test(B.richiesta({ soloAperti: false }, p, OGGI)));
+vero('portali: nessun portale unico per comune e regione', B.portali({ livelli: ['comunale', 'regionale'] }).length === 0);
+vero('portali nazionali ed europei', B.portali({ livelli: ['nazionale', 'europeo'] }).every(x => /^https:\/\//.test(x.url) && /nazionale|europeo/.test(x.livello)) && B.portali({ livelli: ['europeo'] }).length === 2);
+
+// ricerca semplice sul web: una ricerca per livello che rispetta tutti i criteri
+let rw = B.ricercaWeb({ tipo: 'voucher', settore: 'commercio', testo: 'vetrine' }, p, OGGI);
+vero('una ricerca per ogni livello', rw.map(x => x.livello).join() === 'comunale,regionale,nazionale,europeo');
+vero('comune e regione nel territorio', /"Comune di Prato"/.test(rw[0].query) && /"Regione Toscana"/.test(rw[1].query));
+vero('siti istituzionali per Stato e UE', /site:gov\.it/.test(rw[2].query) && /site:europa\.eu/.test(rw[3].query));
+vero('tipo, settore e parole chiave in ogni ricerca', rw.every(x => /voucher/.test(x.query) && /commercio/.test(x.query) && /vetrine/.test(x.query)));
+vero('solo aperti: anno corrente e successivo, esclusi gli scaduti, ultimo anno su Google', rw.every(x => /\(2026 OR 2027\)/.test(x.query) && /-scaduto/.test(x.query) && /-graduatoria/.test(x.query) && /tbs=qdr:y/.test(x.url)));
+vero('il link contiene la ricerca', decodeURIComponent(rw[0].url.split('q=')[1].split('&')[0]) === rw[0].query);
+rw = B.ricercaWeb({ livelli: ['nazionale'], soloAperti: false, tipo: 'credito_imposta', settore: 'energia' }, p, OGGI, 'bing');
+vero('anche chiusi: niente esclusioni né anno', !/-scaduto/.test(rw[0].query) && !/2027/.test(rw[0].query));
+vero('tipo e settore come parole di ricerca', /"credito d'imposta"/.test(rw[0].query) && /energia/.test(rw[0].query) && !/commercio/.test(rw[0].query));
+vero('motore Bing', /^https:\/\/www\.bing\.com\/search\?q=/.test(rw[0].url) && !/tbs=/.test(rw[0].url));
+rw = B.ricercaWeb({ soloAperti: false }, p, OGGI, 'duckduckgo');
+vero('anche chiusi su DuckDuckGo', rw.every(x => !/scadut|aperto/.test(x.query) && /^https:\/\/duckduckgo\.com\/\?q=/.test(x.url)));
+rw = B.ricercaWeb({ livelli: ['comunale', 'regionale'] }, { comune: '', regione: '' }, OGGI);
+vero('senza comune e regione: nessun link e indicazione di cosa manca', rw.every(x => !x.url && x.manca));
 vero('lo schema accetta solo livelli, tipi e settori noti', B.SCHEMA.properties.bandi.items.properties.livello.enum.length === 4 && B.SCHEMA.properties.bandi.items.properties.tipo.enum.indexOf('gara') >= 0);
 
 // --- 5. archivio, scadenze e registro agevolazioni ----------------------------------------------------------------
@@ -83,6 +100,13 @@ vero('JSON con testo intorno', AI.leggiJSON('Ecco: {"a":2} fine').a === 2);
 const ad = AI.adatta(B.SCHEMA, { bandi: [{ titolo: 'X', importo_max: 'n.d.', livello: 'boh' }] });
 vero('campi mancanti completati, numeri non validi restano vuoti', ad.nota === '' && ad.bandi[0].importo_max === null && ad.bandi[0].livello === 'comunale' && Array.isArray(ad.bandi[0].requisiti));
 vero('servizi gratuiti prima di quelli a pagamento', AI.ORDINE[0] === 'gemini' && AI.ORDINE.indexOf('anthropic') > AI.ORDINE.indexOf('groq') && AI.ORDINE[AI.ORDINE.length - 1] === 'custom');
+global.localStorage = { d: {}, getItem(k) { return this.d[k] || null; }, setItem(k, v) { this.d[k] = String(v); } };
+AI.memorizzaElenco('groq', ['modello-letto', 'llama-3.3-70b-versatile', '']);
+vero('menu modelli: predefiniti + memorizzati, senza doppioni', AI.elencoModelli('groq').join() === AI.SERVIZI.groq.modelli.concat(['modello-letto']).join());
+vero('elenco memorizzato nella configurazione', AI.config().servizi.groq.elenco.join() === 'modello-letto,llama-3.3-70b-versatile');
+vero('ogni servizio ha il suo menu (anche quelli senza modelli predefiniti)', AI.ORDINE.every(id => Array.isArray(AI.elencoModelli(id))) && AI.elencoModelli('custom').length === 0);
+AI.salvaConfig({ servizi: { custom: { modello: 'mio-modello', elenco: ['a'] } } });
+vero('il modello scelto a mano compare nel menu', AI.elencoModelli('custom').join() === 'a,mio-modello');
 vero('ricerca web solo con Gemini e Claude', AI.ORDINE.filter(id => AI.SERVIZI[id].web).join() === 'gemini,anthropic');
 
 // --- 7. aziende simulate --------------------------------------------------------------------------------------------
