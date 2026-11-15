@@ -102,7 +102,22 @@ const prova = async (nome, fn) => { try { await fn(); } catch (e) { ko++; consol
 
   // 12. ricerca web: si passa solo tra servizi con ricerca web
   configura(); chiamate = []; guasti = {};
-  vero('ricerca web: solo Gemini tra quelli attivi', AI.attivi(true).join() === 'gemini');
+  vero('ricerca web: Gemini e Groq (Compound) tra quelli attivi, non Mistral', AI.attivi(true).join() === 'gemini,groq');
+
+  // 14. risposta JSON interrotta a metà: si recuperano i bandi completi
+  configura(); chiamate = []; guasti = {};
+  const sb = { type: 'object', properties: { bandi: { type: 'array', items: { type: 'object', properties: { titolo: { type: 'string' } } } }, nota: { type: 'string' } } };
+  AI.ADATTATORI.gemini = async (id) => { chiamate.push(id); return { testo: '```json\n{"bandi":[{"titolo":"Uno"},{"titolo":"Du', fonti: [], modello: 'm', troncata: true }; };
+  x = await AI.chiedi({ testo: 'x', schema: sb });
+  vero('JSON troncato: recuperato il bando completo, nessun cambio di servizio', x.servizio === 'gemini' && x.recuperata && x.json.bandi.length === 1 && x.json.bandi[0].titolo === 'Uno');
+  AI.ADATTATORI.gemini = async (id) => { chiamate.push(id); return { testo: 'Non ho trovato nulla.', fonti: [], modello: 'm' }; };
+  x = await AI.chiedi({ testo: 'x', schema: sb });
+  vero('testo senza JSON: passa al servizio successivo', x.servizio === 'groq');
+  AI.ADATTATORI.gemini = finto;
+
+  // 15. errore finale con l'elenco dei tentativi (per il riquadro di diagnosi)
+  configura(); guasti = { gemini: 'quota', groq: 'chiave', mistral: 'server' };
+  try { await AI.chiedi({ testo: 'x' }); } catch (e) { vero('tentativi nell\'errore', e.tentativi && e.tentativi.map(t => t.servizio + ':' + t.motivo).join() === 'gemini:limite raggiunto,groq:chiave non valida,mistral:servizio non disponibile', JSON.stringify(e.tentativi)); }
 
   // 13. un servizio tornato utilizzabile esce dalla pausa
   configura(); AI.sospendi('gemini', { codice: 'server' }, AI.config());

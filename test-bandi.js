@@ -15,6 +15,8 @@ const grezzi = [
 let r = B.risultati(grezzi);
 vero('restano 2 bandi, 2 scartati senza fonte', r.bandi.length === 2 && r.scartati === 2, r.bandi.length + '/' + r.scartati);
 let v = r.bandi[0], w = r.bandi[1];
+vero('bandi senza link conservati a parte con la ricerca della fonte', r.senzaLink.length === 2 && r.senzaLink[0].titolo === 'Senza link' && /google\.com\/search\?q=%22Senza%20link%22/.test(r.senzaLink[0].cerca));
+vero('consigli per ogni guasto', ['quota', 'chiave', 'modello', 'richiesta', 'rete', 'server', 'rifiuto', 'formato', 'nessuno', 'offline'].every(c => B.consiglio(c).length > 20) && /semplice/.test(B.consiglio('boh')));
 vero('settori ripuliti e senza doppioni', v.settori.length === 1 && v.settori[0] === 'digitale');
 vero('requisiti vuoti tolti', v.requisiti.length === 1);
 vero('date valide conservate, vuote restano vuote', v.scadenza === '2026-12-01' && v.apertura === null);
@@ -107,7 +109,7 @@ vero('elenco memorizzato nella configurazione', AI.config().servizi.groq.elenco.
 vero('ogni servizio ha il suo menu (anche quelli senza modelli predefiniti)', AI.ORDINE.every(id => Array.isArray(AI.elencoModelli(id))) && AI.elencoModelli('custom').length === 0);
 AI.salvaConfig({ servizi: { custom: { modello: 'mio-modello', elenco: ['a'] } } });
 vero('il modello scelto a mano compare nel menu', AI.elencoModelli('custom').join() === 'a,mio-modello');
-vero('ricerca web solo con Gemini e Claude', AI.ORDINE.filter(id => AI.SERVIZI[id].web).join() === 'gemini,anthropic');
+vero('ricerca web con Gemini, Groq (Compound) e Claude', AI.ORDINE.filter(id => AI.SERVIZI[id].web).join() === 'gemini,groq,anthropic');
 
 // --- 7. aziende simulate --------------------------------------------------------------------------------------------
 let tot = 0, superati = 0, n = 0;

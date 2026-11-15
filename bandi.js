@@ -117,11 +117,30 @@
     };
   }
   // unisce i risultati togliendo i doppioni e quelli senza fonte
+  // i bandi senza link non entrano nei risultati: restano in «senzaLink» solo per poterne cercare la fonte
   function risultati(grezzi, origine) {
-    var visti = {}, out = [], scartati = 0;
-    (grezzi || []).forEach(function (x) { var b = normalizza(x, origine); if (!b) { scartati++; return; } var k = chiave(b); if (visti[k]) return; visti[k] = 1; out.push(b); });
-    return { bandi: out, scartati: scartati };
+    var visti = {}, out = [], senzaLink = [];
+    (grezzi || []).forEach(function (x) {
+      var b = normalizza(x, origine);
+      if (!b) { if (x && testo(x.titolo)) senzaLink.push({ titolo: testo(x.titolo).slice(0, 200), ente: testo(x.ente).slice(0, 160), cerca: 'https://www.google.com/search?q=' + encodeURIComponent('"' + testo(x.titolo).slice(0, 150) + '" ' + testo(x.ente).slice(0, 80)) }); return; }
+      var k = chiave(b); if (visti[k]) return; visti[k] = 1; out.push(b);
+    });
+    return { bandi: out, scartati: senzaLink.length, senzaLink: senzaLink };
   }
+  // suggerimenti per i guasti della ricerca con l'AI (codici del motore AI)
+  var CONSIGLI = {
+    quota: 'Limite del piano gratuito raggiunto: riprova più tardi, oppure attiva un secondo servizio con ricerca web (Groq è gratuito) così Timone passa da solo all\'altro.',
+    chiave: 'La chiave è stata rifiutata: ricopiala in Servizi AI e premi «Prova collegamento».',
+    modello: 'Il modello scelto non esiste più o non può cercare sul web: nel menu Modello scegli «Predefinito».',
+    richiesta: 'Il servizio non ha accettato la ricerca web con questo modello: nel menu Modello scegli «Predefinito» o attiva un altro servizio con ricerca web.',
+    rete: 'Servizio non raggiungibile dal browser: controlla la connessione. Alcune reti aziendali o estensioni bloccano i servizi AI; prova da un\'altra rete.',
+    server: 'Il servizio ha un problema temporaneo: riprova tra qualche minuto.',
+    rifiuto: 'Il servizio non ha prodotto una risposta: restringi i criteri (meno livelli, un settore) e riprova.',
+    formato: 'Il servizio non ha restituito un elenco leggibile: restringi i criteri e riprova, oppure usa un altro servizio.',
+    nessuno: 'Attiva in Servizi AI almeno un servizio con ricerca web: Google Gemini o Groq (gratuiti) oppure Claude.',
+    offline: 'Sei offline: la ricerca richiede una connessione.'
+  };
+  function consiglio(codice) { return CONSIGLI[codice] || 'Riprova; se il problema resta usa la ricerca semplice nel web.'; }
   function statoDi(b, oggi) {
     if (b.scadenza && giorniTra(oggi, b.scadenza) < 0) return 'scaduto';
     if (b.apertura && giorniTra(oggi, b.apertura) > 0) return 'in_arrivo';
@@ -225,6 +244,6 @@
 
   return { LIVELLI: LIVELLI, TIPI: TIPI, SETTORI: SETTORI, STATI: STATI, VALUTAZIONI: VALUTAZIONI, DIMENSIONI: DIMENSIONI, REGIONI: REGIONI, PORTALI: PORTALI, SCHEMA: SCHEMA, PARAM: PARAM, MOTORI: MOTORI,
     vuoto: vuoto, dati: dati, profilo: profilo, filtriValidi: filtriValidi, avvisiRicerca: avvisiRicerca, richiesta: richiesta, normalizza: normalizza, risultati: risultati,
-    statoDi: statoDi, filtra: filtra, ordina: ordina, portali: portali, ricercaWeb: ricercaWeb, trova: trova, salva: salva, analizza: analizza, criticita: criticita, agevolazione: agevolazione,
+    statoDi: statoDi, filtra: filtra, ordina: ordina, portali: portali, ricercaWeb: ricercaWeb, consiglio: consiglio, trova: trova, salva: salva, analizza: analizza, criticita: criticita, agevolazione: agevolazione,
     simula: simula, collaudo: collaudo, dataIso: dataIso };
 });

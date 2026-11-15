@@ -54,20 +54,31 @@
   }
   function cartaAi() {
     var h = '<div class="carta"><h3 style="margin-top:0">Ricerca con l\'AI</h3><p class="muto">Il motore AI cerca sul web e restituisce schede con scadenza, importo, requisiti e link alla fonte, già filtrate secondo i criteri.</p>';
-    if (!AI.disponibile(true)) h += '<div class="avviso info">Serve un servizio AI con ricerca web: attiva <b>Google Gemini</b> (gratuito) o Claude in <button class="b p s" data-a="aiApriServizi">Assistente AI → Servizi AI</button>. Nel frattempo usa la ricerca semplice qui sopra.</div>';
+    if (!AI.disponibile(true)) h += '<div class="avviso info">Serve un servizio AI con ricerca web: attiva <b>Google Gemini</b> o <b>Groq</b> (gratuiti) oppure Claude in <button class="b p s" data-a="aiApriServizi">Assistente AI → Servizi AI</button>. Nel frattempo usa la ricerca semplice qui sopra.</div>';
     return h + '<div class="riga"><button class="b" data-a="baCerca"' + (st.bandiAttesa || !AI.disponibile(true) ? ' disabled' : '') + '>' + (st.bandiAttesa ? 'Ricerca in corso…' : 'Cerca con l\'AI') + '</button></div></div>';
   }
 
   function vistaCerca() {
     var f = filtri(), R = st.bandiRis, h = cartaFiltri(true) + cartaWeb() + cartaAi();
-    if (st.bandiAttesa) h += '<div class="carta"><p>Ricerca sul web in corso: può richiedere fino a un minuto.</p></div>';
+    var E = st.bandiErrore;
+    if (st.bandiAttesa) h += '<div class="carta"><p id="baAttesa">' + esc(st.bandiAttesa === true ? 'Ricerca sul web in corso' : st.bandiAttesa) + '…</p><p class="muto">Può richiedere fino a due minuti. Se un servizio non risponde Timone passa da solo a un altro di quelli attivi.</p></div>';
+    else if (E) {
+      h += '<div class="carta crit rosso"><h3 style="margin-top:0">La ricerca con l\'AI non è riuscita</h3><p>' + esc(E.messaggio) + '</p>';
+      if (E.tentativi && E.tentativi.length) h += E.tentativi.map(function (t) { return '<p style="border-top:1px solid var(--linea);padding-top:8px"><b>' + esc(AI.nome(t.servizio)) + '</b>: ' + esc(t.motivo) + '<br><span class="muto">' + esc(B.consiglio(t.codice)) + '</span></p>'; }).join('');
+      else h += '<p class="muto">' + esc(B.consiglio(E.codice)) + '</p>';
+      h += '<div class="riga" style="margin-top:8px"><button class="b p" data-a="baCerca">Riprova</button><button class="b p s" data-a="aiApriServizi">Servizi AI</button></div><p class="muto">Nel frattempo puoi usare la ricerca semplice nel web, che non richiede l\'AI.</p></div>';
+    }
     else if (R) {
       var lista = B.ordina(B.filtra(R.bandi, f, oggi()), oggi());
       h += '<div class="carta"><div class="riga"><h3 style="margin:0">Risultati</h3><span class="sp"></span><span class="tag">' + esc(AI.nome(R.servizio)) + '</span></div>' +
-        '<p class="muto">' + lista.length + ' bandi trovati il ' + giorno(R.quando) + (R.scartati ? ' · ' + R.scartati + ' scartati perché senza link alla fonte' : '') + (R.bandi.length > lista.length ? ' · ' + (R.bandi.length - lista.length) + ' nascosti dai filtri' : '') + '.</p>' +
+        '<p class="muto">' + lista.length + ' bandi trovati il ' + giorno(R.quando) + (R.scartati ? ' · ' + R.scartati + ' senza link alla fonte (in fondo)' : '') + (R.bandi.length > lista.length ? ' · ' + (R.bandi.length - lista.length) + ' nascosti dai filtri' : '') + '.</p>' +
         '<div class="avviso">Risultati trovati dall\'AI sul web: date, importi e requisiti vanno verificati sulla fonte ufficiale prima di qualsiasi decisione. Un bando può mancare dall\'elenco.</div>' +
-        (R.nota ? '<p class="muto">' + esc(R.nota) + '</p>' : '') + '</div>';
+        (R.recuperata ? '<p class="muto">La risposta del servizio era incompleta: sono mostrati i bandi arrivati per intero.</p>' : '') +
+        (R.saltati && R.saltati.length ? '<p class="muto">Ha risposto ' + esc(AI.nome(R.servizio)) + ' al posto di ' + esc(R.saltati.map(function (x) { return AI.nome(x.servizio) + ' (' + x.motivo + ')'; }).join(', ')) + '.</p>' : '') +
+        (R.nota ? '<p class="muto">' + esc(R.nota) + '</p>' : '') + (!R.bandi.length && !R.scartati ? '<p>Nessun bando trovato con questi criteri: prova ad allargarli (più livelli, tutti i tipi, meno parole chiave) o usa la ricerca semplice nel web.</p>' : '') + '</div>';
       lista.forEach(function (b) { h += scheda(b, false); });
+      if (R.senzaLink && R.senzaLink.length) h += '<details class="carta"><summary><span class="nome"><b>Bandi citati senza link alla fonte</b></span><span class="pre">' + R.senzaLink.length + '</span></summary><div class="spiega"><p class="muto">L\'AI li ha nominati ma senza la pagina ufficiale: non si possono salvare finché non trovi la fonte.</p>' +
+        R.senzaLink.map(function (x) { return '<p><b>' + esc(x.titolo) + '</b>' + (x.ente ? ' · ' + esc(x.ente) : '') + ' <a class="b p s" href="' + esc(x.cerca) + '" target="_blank" rel="noopener">Cerca la fonte</a></p>'; }).join('') + '</div></details>';
       if (R.fonti && R.fonti.length) h += '<div class="carta"><h3 style="margin-top:0">Pagine consultate</h3><p class="muto">' + R.fonti.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.titolo || 'fonte') + '</a>'; }).join(' · ') + '</p></div>';
     }
     var po = B.portali(f);
@@ -110,18 +121,19 @@
   var azioni = {
     baSub: function (x) { st.bandiSub = x.k; T.disegna(); },
     baCerca: function () {
-      var f = B.filtriValidi(filtri()), p = B.profilo(st.az), oggiR = oggi();
-      st.bandiAttesa = true; T.disegna();
-      AI.chiedi({ sistema: 'Ruolo: esperto di finanza agevolata italiana ed europea. Cerca con lo strumento di ricerca web e usa solo pagine ufficiali (enti, ministeri, regioni, comuni, Camere di commercio, Commissione europea).', testo: B.richiesta(f, p, oggiR), schema: B.SCHEMA, web: true, maxToken: 12000,
-        suCambio: function (da, a, motivo) { T.toast(AI.nome(da) + ' non utilizzabile (' + motivo + '): passo a ' + AI.nome(a)); } })
+      var f = B.filtriValidi(filtri()), p = B.profilo(st.az), oggiR = oggi(), primo = AI.attivi(true)[0];
+      st.bandiAttesa = 'Ricerca con ' + AI.nome(primo); st.bandiErrore = null; T.disegna();
+      AI.chiedi({ sistema: 'Ruolo: esperto di finanza agevolata italiana ed europea. Cerca con lo strumento di ricerca web e usa solo pagine ufficiali (enti, ministeri, regioni, comuni, Camere di commercio, Commissione europea). Per ogni bando riporta l\'indirizzo completo (https://…) della pagina ufficiale trovata nella ricerca.', testo: B.richiesta(f, p, oggiR), schema: B.SCHEMA, web: true, maxToken: 12000,
+        suCambio: function (da, a, motivo) { st.bandiAttesa = AI.nome(da) + ' non utilizzabile (' + motivo + '): ricerca con ' + AI.nome(a); var e = document.getElementById('baAttesa'); if (e) e.textContent = st.bandiAttesa + '…'; } })
         .then(function (x) {
           var r = B.risultati(x.json.bandi, 'ricerca AI · ' + AI.nome(x.servizio));
-          st.bandiRis = { bandi: B.ordina(r.bandi, oggiR), scartati: r.scartati, nota: x.json.nota, fonti: x.fonti || [], servizio: x.servizio, quando: oggiR };
-          T.toast((r.bandi.length ? r.bandi.length + ' bandi trovati: verifica sempre la fonte' : 'Nessun bando trovato con questi filtri') + (x.saltati.length ? ' · risposta da ' + AI.nome(x.servizio) : ''));
+          st.bandiRis = { bandi: B.ordina(r.bandi, oggiR), scartati: r.scartati, senzaLink: r.senzaLink, nota: x.json.nota, fonti: x.fonti || [], servizio: x.servizio, saltati: x.saltati, recuperata: x.recuperata, quando: oggiR };
+          T.toast(r.bandi.length ? r.bandi.length + ' bandi trovati: verifica sempre la fonte' : 'Nessun bando con link alla fonte');
         })
-        .catch(function (e) { T.toast(e.message); })
+        .catch(function (e) { st.bandiErrore = { messaggio: e.message, codice: e.codice, tentativi: e.tentativi || [] }; })
         .then(function () { st.bandiAttesa = false; if (st.scheda === 'bandi') ridisegna(); });
     },
+
     baSalva: function (x) { var b = B.ordina(st.bandiRis.bandi, oggi())[Number(x.k)]; if (!b) return; B.salva(st.az, b, oggi()); T.salva(); ridisegna(); T.toast('Bando salvato'); },
     baElimina: function (x) { T.conferma('Eliminare questo bando dai salvati?', 'Elimina').then(function (si) { if (!si) return; d().salvati = d().salvati.filter(function (b) { return b.id !== x.id; }); T.salva(); ridisegna(); }); },
     baAgevolazione: function (x) {
