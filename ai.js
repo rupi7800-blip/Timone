@@ -2,7 +2,9 @@
    Servizi selezionabili: Google Gemini, Groq, OpenRouter, Mistral, Cerebras, Hugging Face, DeepSeek, Pollinations,
    Ollama, OpenAI, Anthropic Claude, altro servizio compatibile OpenAI.
    - Le chiavi restano su questo dispositivo (localStorage) e non entrano nelle esportazioni dell'azienda.
-   - Se il servizio principale esaurisce la quota o non risponde, la richiesta passa al successivo configurato.
+   - Se un servizio non è utilizzabile (quota esaurita, chiave rifiutata, modello sparito, errore, nessuna risposta)
+     la richiesta passa in automatico al successivo tra quelli attivi e il servizio guasto resta in pausa per qualche
+     minuto, così le richieste successive partono subito da uno funzionante.
    - La ricerca sul web (con fonti) è disponibile con Google Gemini e Claude.
    Uso: TimoneAI.chiedi({ sistema, testo, schema, web }) → { testo, json, fonti, servizio }
         TimoneAI.chat({ storia, contesto, web, suTesto }) → { testo, fonti, servizio } */
@@ -62,18 +64,42 @@
   function salvaConfig(c) { try { localStorage.setItem(CHIAVE, JSON.stringify(c)); return true; } catch (e) { return false; } }
   function usabile(id, cfg) { var s = SERVIZI[id], c = cfg.servizi[id]; return c.attivo && (!s.chiave || !!c.chiave) && (id !== 'custom' || !!c.base); }
   function disponibile(conWeb) { var cfg = config(); return ORDINE.some(function (id) { return usabile(id, cfg) && (!conWeb || SERVIZI[id].web); }); }
-  function attivi(conWeb, cfg) {
+  /* Servizi da provare, nell'ordine: il principale, poi gli altri attivi. Quelli messi in pausa perché non
+     utilizzabili (limite raggiunto, chiave rifiutata, servizio giù…) passano in fondo: si usano solo se gli altri falliscono. */
+  function attivi(conWeb, cfg, adesso) {
     cfg = cfg || config();
     var l = [cfg.principale].concat(ORDINE.filter(function (x) { return x !== cfg.principale; })).filter(function (id) { return usabile(id, cfg) && (!conWeb || SERVIZI[id].web); });
-    return cfg.riserva ? l : l.slice(0, 1);
+    if (!cfg.riserva) return l.slice(0, 1);
+    var p = function (id) { return pausa(id, cfg, adesso) ? 1 : 0; };
+    return l.map(function (id, i) { return { id: id, i: i }; }).sort(function (a, b) { return p(a.id) - p(b.id) || a.i - b.i; }).map(function (x) { return x.id; });
   }
+
+  // ------------------------------------------------------------ servizi non utilizzabili: pausa automatica
+  var CHIAVE_PAUSE = 'timone.ai.pause';
+  var MINUTI_PAUSA = { quota: 15, chiave: 60, modello: 60, richiesta: 10, server: 5, rete: 5, rifiuto: 2, formato: 2, sconosciuto: 5 };
+  var MOTIVI = { quota: 'limite raggiunto', chiave: 'chiave non valida', modello: 'modello non trovato', richiesta: 'richiesta non accettata', server: 'servizio non disponibile', rete: 'non raggiungibile', rifiuto: 'risposta vuota o rifiutata', formato: 'risposta non valida', sconosciuto: 'errore' };
+  var pauseMem = null;
+  function leggiPause() { if (pauseMem) return pauseMem; try { pauseMem = JSON.parse(localStorage.getItem(CHIAVE_PAUSE)) || {}; } catch (e) { pauseMem = {}; } return pauseMem; }
+  function scriviPause() { try { localStorage.setItem(CHIAVE_PAUSE, JSON.stringify(pauseMem || {})); } catch (e) { /* solo in memoria */ } }
+  // impronta della configurazione: se l'utente cambia chiave, modello o indirizzo la pausa decade
+  function impronta(id, cfg) { var c = cfg.servizi[id] || {}; return [c.modello, c.base, String(c.chiave || '').slice(-6)].join('|'); }
+  function pausa(id, cfg, adesso) {
+    var x = leggiPause()[id]; adesso = adesso || Date.now();
+    if (!x || x.fino <= adesso || x.impronta !== impronta(id, cfg || config())) return null;
+    return x;
+  }
+  function sospendi(id, err, cfg, adesso) {
+    var min = MINUTI_PAUSA[err.codice] === undefined ? 5 : MINUTI_PAUSA[err.codice];
+    leggiPause()[id] = { fino: (adesso || Date.now()) + min * 60000, codice: err.codice, motivo: MOTIVI[err.codice] || 'errore', impronta: impronta(id, cfg) }; scriviPause();
+  }
+  function riattiva(id) { var p = leggiPause(); if (id) delete p[id]; else Object.keys(p).forEach(function (k) { delete p[k]; }); scriviPause(); }
   function nome(id) { return SERVIZI[id] ? SERVIZI[id].nome : id; }
   function modello(id, cfg) { return cfg.servizi[id].modello || SERVIZI[id].modello; }
   function base(id, cfg) { return (cfg.servizi[id].base || SERVIZI[id].base).replace(/\/+$/, ''); }
 
   // ------------------------------------------------------------ errori
   function ErroreAI(msg, codice, servizio) { var e = new Error(msg); e.codice = codice; e.servizio = servizio; return e; }
-  var RIPROVABILI = ['quota', 'server', 'rete', 'modello', 'chiave', 'rifiuto', 'formato'];
+  var NON_RIPROVABILI = ['offline']; // senza connessione nessun altro servizio può rispondere
   function erroreHttp(status, corpo, id) {
     var n = nome(id), msg = (corpo && ((corpo.error && corpo.error.message) || corpo.message || (typeof corpo.error === 'string' ? corpo.error : ''))) || '';
     if (status === 401 || status === 403) return ErroreAI(n + ': chiave non valida o senza accesso a questo modello.', 'chiave', id);
@@ -215,28 +241,40 @@
   var ADATTATORI = { gemini: gemini, openai: openai, anthropic: anthropic };
 
   // ------------------------------------------------------------ esecuzione con servizi di riserva
+  /* Esegue la richiesta sul primo servizio utilizzabile. Se un servizio non risponde o rifiuta (limite raggiunto,
+     chiave non valida, modello sparito, errore del servizio…) viene messo in pausa per qualche minuto e si passa
+     in automatico al successivo tra quelli attivi. Se una risposta in streaming si interrompe a metà, ricomincia
+     con il servizio successivo (r.suRicomincia avvisa l'interfaccia di cancellare il testo parziale).
+     Il risultato indica in x.saltati i servizi scartati prima di quello che ha risposto. */
   async function esegui(r) {
     var cfg = config(), lista = attivi(r.web, cfg), errori = [], iniziato = false;
     if (!disponibile()) throw ErroreAI('Configura almeno un servizio AI (ad esempio Google Gemini, gratuito) nella scheda Assistente AI → Servizi AI.', 'nessuno');
     if (!lista.length) throw ErroreAI('Questa funzione cerca sul web: attiva Google Gemini (gratuito) o Claude nei servizi AI.', 'nessuno');
-    var suTesto = r.suTesto;
+    var suTesto = r.suTesto, suCambio = r.suCambio;
     r = Object.assign({ maxToken: 8000 }, r, { suTesto: function (t) { iniziato = true; if (suTesto) suTesto(t); } });
     for (var i = 0; i < lista.length; i++) {
       var id = lista[i];
       try {
         var x = await ADATTATORI[SERVIZI[id].tipo](id, cfg, r);
         if (r.schema) { try { x.json = adatta(r.schema, leggiJSON(x.testo)); } catch (e) { throw ErroreAI(nome(id) + ': risposta non in formato JSON.', 'formato', id); } }
-        x.servizio = id; return x;
+        if (leggiPause()[id]) riattiva(id);
+        x.servizio = id; x.saltati = errori.map(function (e) { return { servizio: e.servizio, motivo: MOTIVI[e.codice] || e.message }; });
+        return x;
       } catch (e) {
         var err = e.codice ? e : ErroreAI(e.message || String(e), 'sconosciuto', id);
-        errori.push(err);
-        if (iniziato || RIPROVABILI.indexOf(err.codice) < 0) break; // testo già mostrato o errore non recuperabile
+        err.servizio = err.servizio || id; errori.push(err);
+        if (NON_RIPROVABILI.indexOf(err.codice) >= 0) break;
+        sospendi(id, err, cfg);
+        if (i === lista.length - 1) break;
+        if (iniziato) { if (!r.suRicomincia) break; r.suRicomincia(); iniziato = false; } // testo parziale: si ricomincia con il successivo
+        if (suCambio) suCambio(id, lista[i + 1], MOTIVI[err.codice] || err.message);
       }
     }
     var ultimo = errori[errori.length - 1];
     if (errori.length > 1) ultimo.message += ' (provati: ' + errori.map(function (x) { return nome(x.servizio); }).join(', ') + ')';
     throw ultimo;
   }
+
 
   var SISTEMA = 'Sei l\'assistente di "Timone", piattaforma di controllo di gestione e analisi aziendale per imprese italiane: esperto di bilancio (OIC, riclassificazioni), analisi per indici, controllo di gestione, finanza d\'impresa, agevolazioni e bandi pubblici.\n' +
     'Regole:\n- Rispondi sempre in italiano, in modo concreto e applicabile all\'azienda descritta nel contesto.\n' +
@@ -246,13 +284,13 @@
     '- Le tue risposte sono un supporto alle decisioni e non sostituiscono il commercialista o il consulente del lavoro.';
 
   // domanda singola, con risposta in testo o JSON secondo lo schema
-  function chiedi(o) { return esegui({ sistema: SISTEMA + (o.sistema ? '\n\n' + o.sistema : '') + (o.contesto ? '\n\nCONTESTO DELL\'AZIENDA\n' + o.contesto : ''), messaggi: [{ role: 'user', content: o.testo }], schema: o.schema, web: !!o.web, maxToken: o.maxToken || 8000 }); }
+  function chiedi(o) { return esegui({ sistema: SISTEMA + (o.sistema ? '\n\n' + o.sistema : '') + (o.contesto ? '\n\nCONTESTO DELL\'AZIENDA\n' + o.contesto : ''), messaggi: [{ role: 'user', content: o.testo }], schema: o.schema, web: !!o.web, suCambio: o.suCambio, maxToken: o.maxToken || 8000 }); }
   // conversazione in streaming
   function chat(o) {
     var sistema = SISTEMA + '\nRispondi in testo semplice (elenchi con trattino e **grassetto** consentiti), senza tabelle. Separa "Fatti", "Ipotesi" e "Consigli" quando utile.' + (o.contesto ? '\n\nCONTESTO DELL\'AZIENDA\n' + o.contesto : '');
     var storia = o.storia.map(function (m) { return { role: m.role, content: m.content }; });
     while (storia.length && storia[0].role !== 'user') storia.shift(); // la conversazione deve iniziare dall'utente
-    return esegui({ sistema: sistema, messaggi: storia, web: !!o.web, flusso: true, suTesto: o.suTesto, maxToken: 8000 });
+    return esegui({ sistema: sistema, messaggi: storia, web: !!o.web, flusso: true, suTesto: o.suTesto, suRicomincia: o.suRicomincia, suCambio: o.suCambio, maxToken: 8000 });
   }
   // prova di collegamento di un singolo servizio (con la configurazione non ancora salvata)
   async function prova(id, grezza) {
@@ -277,6 +315,6 @@
     return id === 'openrouter' ? ids.filter(function (x) { return /:free$/.test(x); }) : ids;
   }
 
-  root.TimoneAI = { SERVIZI: SERVIZI, ORDINE: ORDINE, config: config, salvaConfig: salvaConfig, elencoModelli: elencoModelli, memorizzaElenco: memorizzaElenco, disponibile: disponibile, attivi: attivi, nome: nome,
+  root.TimoneAI = { SERVIZI: SERVIZI, ORDINE: ORDINE, config: config, salvaConfig: salvaConfig, pausa: pausa, riattiva: riattiva, sospendi: sospendi, esegui: esegui, ADATTATORI: ADATTATORI, elencoModelli: elencoModelli, memorizzaElenco: memorizzaElenco, disponibile: disponibile, attivi: attivi, nome: nome,
     chiedi: chiedi, chat: chat, prova: prova, modelli: modelli, leggiJSON: leggiJSON, adatta: adatta };
 })(typeof self !== 'undefined' ? self : this);
