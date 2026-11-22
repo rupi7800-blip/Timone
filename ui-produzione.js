@@ -38,7 +38,7 @@
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="OEE mensile"><line x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '" stroke="var(--muto)" stroke-dasharray="4 4"/>' + out + '</svg><p class="muto">OEE per mese; la linea tratteggiata è l\'obiettivo del ' + fmt(ob, 'pct') + '.</p>';
   }
   function tempi(a) {
-    return '<table>' + riga('Ore disponibili (turni)', ore(a.disponibili)) + riga('− Manutenzione pianificata', ore(a.manutenzione)) + riga('= Ore pianificate', ore(a.pianificate), 1) + riga('− Fermi', ore(a.fermo) + ' · ' + fmt(a.quotaFermi, 'pct')) + riga('− Attrezzaggi', ore(a.attrezzaggio) + ' · ' + fmt(a.quotaAttrezzaggi, 'pct')) + riga('= Ore operative', ore(a.operative), 1) + '</table>';
+    return '<div class="scorri"><table>' + riga('Ore disponibili (turni)', ore(a.disponibili)) + riga('− Manutenzione pianificata', ore(a.manutenzione)) + riga('= Ore pianificate', ore(a.pianificate), 1) + riga('− Fermi', ore(a.fermo) + ' · ' + fmt(a.quotaFermi, 'pct')) + riga('− Attrezzaggi', ore(a.attrezzaggio) + ' · ' + fmt(a.quotaAttrezzaggi, 'pct')) + riga('= Ore operative', ore(a.operative), 1) + '</table></div>';
   }
 
   function vSintesi() {
@@ -50,16 +50,16 @@
       tile('Costo dei fermi', a.costoFermi ? eur(a.costoFermi) : '—', a.costoFermi ? (a.costoFermiStimato ? 'stimato dal margine di bilancio' : 'dal costo orario inserito') + (a.costoFermiParziale ? ' · parziale' : '') : 'non calcolabile') + '</div>';
     if (a.orfane) h += '<div class="avviso rosso">' + a.orfane + ' registrazioni fanno riferimento a macchine eliminate e non sono conteggiate.</div>';
     h += '<div class="carta"><h3 style="margin-top:0">Andamento</h3>' + barre(a.mesi, ob) + '</div>';
-    h += '<div class="carta"><h3 style="margin-top:0">Dove va il tempo</h3>' + tempi(Tt) + (Tt.perditaPrincipale ? '<h3>Perdite in ore equivalenti</h3><table>' + ['disponibilita', 'performance', 'qualita'].map(function (k) { return riga(PERDITE[k] + (Tt.perditaPrincipale === k ? ' <span class="tag rosso">la maggiore</span>' : ''), Tt.perdite[k] === null ? 'non calcolabile' : ore(Tt.perdite[k]) + (a.margineOra ? ' · ' + eur(Tt.perdite[k] * a.margineOra) : '')); }).join('') + '</table>' +
+    h += '<div class="carta"><h3 style="margin-top:0">Dove va il tempo</h3>' + tempi(Tt) + (Tt.perditaPrincipale ? '<h3>Perdite in ore equivalenti</h3><div class="scorri"><table>' + ['disponibilita', 'performance', 'qualita'].map(function (k) { return riga(PERDITE[k] + (Tt.perditaPrincipale === k ? ' <span class="tag rosso">la maggiore</span>' : ''), Tt.perdite[k] === null ? 'non calcolabile' : ore(Tt.perdite[k]) + (a.margineOra ? ' · ' + eur(Tt.perdite[k] * a.margineOra) : '')); }).join('') + '</table></div>' +
       (a.margineOra ? '<p class="muto">Valore in euro: ore × margine di contribuzione per ora operativa (' + eur(a.margineOra) + ', stima dal bilancio). Vale solo se la produzione in più sarebbe venduta.</p>' : '') : '') + '</div>';
     h += '<div class="carta"><h3 style="margin-top:0">Per macchina</h3><div class="scorri"><table><tr><th></th><th>OEE</th><th>Disp.</th><th>Perf.</th><th>Qual.</th><th>Fermi</th></tr>';
     a.macchine.forEach(function (x) { var m = x.a; h += '<tr><td>' + esc(x.m.nome) + '</td><td><span class="tag ' + tagOee(m.oee, ob) + '">' + fmt(m.oee, 'pct') + '</span></td><td>' + fmt(m.disponibilita, 'pct') + '</td><td>' + fmt(m.performance, 'pct') + '</td><td>' + fmt(m.qualita, 'pct') + '</td><td>' + ore(m.fermo) + '</td></tr>'; });
     h += '</table></div><p class="muto">Dalla macchina con OEE più basso. Tocca “Macchine” per il dettaglio.</p></div>';
     var conC = a.macchine.filter(function (x) { return x.oreCommesse !== undefined; });
-    if (conC.length || a.energia) { h += '<div class="carta"><h3 style="margin-top:0">Collegamenti con gli altri moduli</h3><table>';
+    if (conC.length || a.energia) { h += '<div class="carta"><h3 style="margin-top:0">Collegamenti con gli altri moduli</h3><div class="scorri"><table>';
       conC.forEach(function (x) { h += riga(esc(x.m.nome) + ': ore attribuite alle commesse', ore(x.oreCommesse) + ' su ' + ore(x.a.operative) + ' · ' + fmt(x.quotaCommesse, 'pct')); });
       if (a.energia) h += riga('kWh registrati sulle macchine', nfx(a.energia.kwhMacchine, 0) + ' su ' + nfx(a.energia.kwhBollette, 0) + ' delle bollette · ' + fmt(a.energia.quota, 'pct'));
-      h += '</table><p class="muto">Le ore operative non attribuite a commesse sono produzione senza commessa o ore non rilevate. I kWh delle bollette non registrati sulle macchine sono servizi generali, impianti ausiliari e consumi a macchina ferma.</p></div>'; }
+      h += '</table></div><p class="muto">Le ore operative non attribuite a commesse sono produzione senza commessa o ore non rilevate. I kWh delle bollette non registrati sulle macchine sono servizi generali, impianti ausiliari e consumi a macchina ferma.</p></div>'; }
     a.criticita.forEach(function (x) { h += '<div class="carta crit ' + x.gravita + '"><h3>' + esc(x.titolo) + '</h3><dl><div><dt>Dati</dt><dd>' + esc(x.dati) + '</dd></div><div><dt>Causa probabile</dt><dd>' + esc(x.causa) + '</dd></div><div><dt>Intervento</dt><dd>' + esc(x.intervento) + '</dd></div><div><dt>Quanto pesa</dt><dd>' + esc(x.effetto) + '</dd></div></dl></div>'; });
     return h;
   }
@@ -73,10 +73,10 @@
       h += '<div class="carta"><div class="riga"><h3 style="margin:0">' + esc(m.nome) + (m.reparto ? ' <span class="muto">· ' + esc(m.reparto) + '</span>' : '') + '</h3><span class="sp"></span>' + (x ? '<span class="tag ' + tagOee(x.a.oee, ob) + '">OEE ' + fmt(x.a.oee, 'pct') + '</span>' : '') + (T.scrivibile() ? '<button class="b p s" data-a="prMacchina" data-id="' + esc(m.id) + '">Modifica</button>' : '') + '</div>';
       if (!x) { h += '<p class="muto">Nessuna registrazione nel ' + st.anno + '.</p></div>'; return; }
       var k = x.a;
-      h += barre(x.mesi, ob) + tempi(k) + '<table>' + riga('Pezzi prodotti / scartati', nf0.format(k.pezzi) + ' / ' + nf0.format(k.scarti) + ' · ' + fmt(k.quotaScarti, 'pct')) + riga('Pezzi buoni per ora operativa', k.pezziOra === null ? '—' : nfx(k.pezziOra, 1)) +
+      h += barre(x.mesi, ob) + tempi(k) + '<div class="scorri"><table>' + riga('Pezzi prodotti / scartati', nf0.format(k.pezzi) + ' / ' + nf0.format(k.scarti) + ' · ' + fmt(k.quotaScarti, 'pct')) + riga('Pezzi buoni per ora operativa', k.pezziOra === null ? '—' : nfx(k.pezziOra, 1)) +
         riga('Tempo ciclo: standard → effettivo', (k.cicloStandard === null ? '—' : nfx(k.cicloStandard, 1) + ' s') + ' → ' + (k.cicloEffettivo === null ? '—' : nfx(k.cicloEffettivo, 1) + ' s')) + riga('Energia per pezzo buono', k.kwhPezzo === null ? '—' : nfx(k.kwhPezzo, 3) + ' kWh') + riga('Energia per ora operativa', k.kwhOra === null ? '—' : nfx(k.kwhOra, 1) + ' kWh') +
         riga('Capacità utilizzata', x.saturazione === null ? 'capacità non indicata' : fmt(x.saturazione, 'pct')) + riga('Costo dei fermi' + (x.costoFermoOrigine ? ' <span class="tag ' + (x.costoFermoOrigine === 'stimato' ? 'giallo' : 'ok') + '">' + x.costoFermoOrigine + '</span>' : ''), x.costoFermo === null ? 'non calcolabile' : eur(x.costoFermo)) +
-        riga('Costo dei pezzi scartati', k.scartiValorizzati ? eur(k.valoreScarti) : 'manca il valore per pezzo') + (x.oreCommesse !== undefined ? riga('Ore attribuite alle commesse', ore(x.oreCommesse) + ' · ' + fmt(x.quotaCommesse, 'pct')) : '') + '</table></div>';
+        riga('Costo dei pezzi scartati', k.scartiValorizzati ? eur(k.valoreScarti) : 'manca il valore per pezzo') + (x.oreCommesse !== undefined ? riga('Ore attribuite alle commesse', ore(x.oreCommesse) + ' · ' + fmt(x.quotaCommesse, 'pct')) : '') + '</table></div></div>';
     });
     return h;
   }
