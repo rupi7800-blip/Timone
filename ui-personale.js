@@ -82,8 +82,8 @@
     var s2 = P.simulaStraordinari(a, { ore: f.ore });
     h += '<div class="carta"><h3 style="margin-top:0">Straordinari o una persona in più?</h3><div class="riga">' + campo('Ore in più da coprire in un anno', 'peSOre', nfx(f.ore, 0)) + '<button class="b p" data-a="peSimula">Calcola</button></div>';
     if (!s2) h += '<div class="avviso">Non calcolabile: mancano le ore lavorate.</div>';
-    else h += '<table style="margin-top:10px">' + riga('Con straordinari (' + e2(s2.costoOraStraordinario) + '/h)', eur(s2.costoStraordinari)) + riga('Con ' + s2.persone + (s2.persone === 1 ? ' assunzione' : ' assunzioni') + ' (' + nf0.format(s2.oreCoperte) + ' ore disponibili)', eur(s2.costoAssunzioni)) +
-      riga('Costa meno', (s2.conviene === 'straordinari' ? 'gli straordinari' : 'l\'assunzione') + ' · differenza ' + eur(s2.differenza), 1) + riga('Soglia di indifferenza', nf0.format(s2.soglia) + ' ore l\'anno') + '</table><p class="muto">' + esc(s2.ipotesi) + '</p>';
+    else h += '<div class="scorri"><table style="margin-top:10px">' + riga('Con straordinari (' + e2(s2.costoOraStraordinario) + '/h)', eur(s2.costoStraordinari)) + riga('Con ' + s2.persone + (s2.persone === 1 ? ' assunzione' : ' assunzioni') + ' (' + nf0.format(s2.oreCoperte) + ' ore disponibili)', eur(s2.costoAssunzioni)) +
+      riga('Costa meno', (s2.conviene === 'straordinari' ? 'gli straordinari' : 'l\'assunzione') + ' · differenza ' + eur(s2.differenza), 1) + riga('Soglia di indifferenza', nf0.format(s2.soglia) + ' ore l\'anno') + '</table></div><p class="muto">' + esc(s2.ipotesi) + '</p>';
     h += '</div>';
     // esternalizzazione
     var s3 = P.simulaEsternalizzazione(a, { ore: f.oreEst, tariffa: f.tariffa, quotaEvitabile: f.quota / 100 });
