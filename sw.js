@@ -7,7 +7,7 @@ var FILE = ['./', 'index.html', 'app.js', 'motore.js', 'simulatore.js', 'importa
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
-    return Promise.all(FILE.map(function (f) { return fetch(f, { cache: 'reload' }).then(function (r) { if (r.ok) return c.put(f, r); }); }));
+    return Promise.all(FILE.map(function (f) { return fetch(f, { cache: 'reload' }).then(function (r) { if (r.ok) return c.put(f, r); }).catch(function () { /* file non scaricato: verrà preso dalla rete alla prima richiesta */ }); }));
   }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
