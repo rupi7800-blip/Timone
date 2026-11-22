@@ -828,7 +828,7 @@
   }
   function avvia() {
     disegnaNav();
-    if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function (e) { if (window.console) console.warn('Service worker non registrato:', e && e.message); });
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) navigator.serviceWorker.register('sw.js').catch(function (e) { if (window.console) console.warn('Service worker non registrato:', e && e.message); });
     if (location.protocol.indexOf('http') === 0) { controllaVersione(false); setInterval(function () { controllaVersione(false); }, 30 * 60 * 1000); }
     var p = Arch.remoto() ? Arch.utente().then(function (u) { stato.utente = u; }).catch(function (e) { toast(e.message); }) : Promise.resolve();
     p.then(function () { if (Arch.remoto() && !stato.utente) { disegna(); return; } return avviaDati(); });
