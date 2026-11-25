@@ -3,7 +3,7 @@
    le funzioni del motore e si disegnano i risultati. */
 (function () {
   'use strict';
-  var VERSIONE = '1.15.1';
+  var VERSIONE = '1.15.2';
   var M = window.Motore, Sim = window.Simulatore, Imp = window.Importa, Arch = window.Archivio, X = window.Xbrl;
   var $ = function (s) { return document.querySelector(s); };
 
@@ -134,7 +134,7 @@
   function vistaBenvenuto() {
     return '<h2>Benvenuto</h2>' +
       '<div class="carta"><h3 style="margin-top:0">Prova subito con un\'azienda simulata</h3><p class="muto">Crea un\'azienda di fantasia con bilanci coerenti su più anni: serve a vedere e collaudare tutte le funzioni senza usare dati reali.</p><button class="b" data-a="scheda" data-scheda="collaudo">Apri la simulazione</button></div>' +
-      '<div class="carta"><h3 style="margin-top:0">Azienda reale</h3><p class="muto">Carica il bilancio XBRL depositato al Registro delle Imprese (anche firmato .p7m): l\'azienda viene creata con i suoi dati. In alternativa creala vuota e inserisci il bilancio a mano o da Excel/CSV.</p><div class="riga"><label class="b" style="cursor:pointer">Da bilancio XBRL<input type="file" accept=".xbrl,.xml,.p7m" data-c="fileXbrlNuova" hidden></label><button class="b s" data-a="nuovaAzienda">Nuova azienda vuota</button></div></div>';
+      '<div class="carta"><h3 style="margin-top:0">Azienda reale</h3><p class="muto">Carica il bilancio XBRL depositato al Registro delle Imprese (anche firmato .p7m): l\'azienda viene creata con i suoi dati. In alternativa creala vuota e inserisci il bilancio a mano o da Excel/CSV.</p><div class="riga"><label class="b" style="cursor:pointer">Da bilancio XBRL<input type="file" data-c="fileXbrlNuova" hidden></label><button class="b s" data-a="nuovaAzienda">Nuova azienda vuota</button></div></div>';
   }
   function vistaAccesso() {
     return '<h2>Accesso</h2><div class="carta"><p class="muto">I dati sono su un database remoto: serve un account.</p>' +
@@ -293,7 +293,7 @@
   }
   function bilImporta() {
     var h = '<div class="carta"><h3 style="margin-top:0">Importa il bilancio XBRL</h3><p class="muto">Il file .xbrl depositato al Registro delle Imprese, anche nella versione firmata .p7m. Si leggono i prospetti di tutti gli anni presenti (di solito l\'esercizio e il precedente) e ogni voce viene controllata con i totali ufficiali del bilancio.</p>' +
-      (scrivibile() ? '<label class="b p" style="cursor:pointer">Scegli file XBRL<input type="file" accept=".xbrl,.xml,.p7m" data-c="file" hidden></label>' : '') + '</div>';
+      (scrivibile() ? '<label class="b p" style="cursor:pointer">Scegli file XBRL<input type="file" data-c="file" hidden></label>' : '') + '</div>';
     h += '<div class="carta"><h3 style="margin-top:0">Importa da Excel o CSV</h3><p class="muto">Una riga per voce, una colonna per anno. Scarica il modello, compilalo e ricaricalo. Le righe non riconosciute non vengono scartate né indovinate: le assegni tu.</p>' +
       '<div class="riga"><button class="b p s" data-a="modello">Scarica il modello</button>' + (scrivibile() ? '<label class="b p" style="cursor:pointer">Scegli file<input type="file" accept=".csv,.txt,.xlsx,.xls" data-c="file" hidden></label>' : '') + '</div></div>';
     var im = stato.importazione;
@@ -571,7 +571,7 @@
   function dialogoAziende() {
     Arch.elenco().then(function (el) {
       var h = '<h3 style="margin-top:0">Aziende</h3><div class="lista">' + (el.length ? el.map(function (a) { return '<button data-a="apri" data-id="' + esc(a.id) + '"><span style="flex:1">' + esc(a.nome) + '</span>' + (a.simulata ? '<span class="tag simulato">simulata</span>' : '') + (a.ruolo && a.ruolo !== 'titolare' ? '<span class="tag">' + esc(a.ruolo) + '</span>' : '') + '</button>'; }).join('') : '<p class="muto">Nessuna azienda.</p>') + '</div>' +
-        '<div class="riga" style="margin-top:14px"><button class="b" data-a="nuovaAzienda">Nuova azienda</button><label class="b s" style="cursor:pointer">Da XBRL<input type="file" accept=".xbrl,.xml,.p7m" data-c="fileXbrlNuova" hidden></label><button class="b s" data-a="vai" data-scheda="collaudo">Azienda simulata</button><span class="sp"></span><button class="b s" data-a="chiudi">Chiudi</button></div>';
+        '<div class="riga" style="margin-top:14px"><button class="b" data-a="nuovaAzienda">Nuova azienda</button><label class="b s" style="cursor:pointer">Da XBRL<input type="file" data-c="fileXbrlNuova" hidden></label><button class="b s" data-a="vai" data-scheda="collaudo">Azienda simulata</button><span class="sp"></span><button class="b s" data-a="chiudi">Chiudi</button></div>';
       $('#dlgCorpo').innerHTML = h; $('#dlg').showModal();
     }).catch(function (e) { toast(e.message); });
   }
@@ -621,7 +621,8 @@
   }
   // bilancio da file: XBRL oppure tabella CSV/Excel (stessa lettura usata dai moduli)
   function leggiFile(file) {
-    var xbrl = /\.(xbrl|xml|p7m)$/i.test(file.name);
+    // sul telefono un XBRL può arrivare come .bin: tutto ciò che non è una tabella si legge come XBRL (il contenuto è comunque controllato)
+    var xbrl = !/\.(csv|txt|xlsx?)$/i.test(file.name);
     var lettura = xbrl ? xbrlDa(file) : tabellaDa(file).then(function (matrice) { var r = Imp.interpreta(matrice); r.nome = file.name; return r; });
     lettura.then(function (r) {
       stato.importazione = r; disegna();

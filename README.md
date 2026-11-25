@@ -1,6 +1,6 @@
 # Timone · piattaforma di controllo e analisi aziendale
 
-Versione 1.15.1 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**, **Finanziamenti e agevolazioni**, **Commerciale**, **Confronti e ISA**, **Piano pluriennale**, **Ricerca bandi** e **Assistente AI**.
+Versione 1.15.2 — **nucleo finanziario**, **lettura dei bilanci XBRL**, **report** e moduli operativi **Commesse e marginalità**, **Magazzino e scorte**, **Personale**, **Energia e utenze**, **Produzione**, **Investimenti**, **Decisioni produttive**, **Finanziamenti e agevolazioni**, **Commerciale**, **Confronti e ISA**, **Piano pluriennale**, **Ricerca bandi** e **Assistente AI**.
 
 Tutto ciò che manca, è approssimato o non è stato verificato è elencato in [LIMITI.md](LIMITI.md).
 "Timone" è un nome di lavoro: si cambia in `index.html` e `manifest.json`.

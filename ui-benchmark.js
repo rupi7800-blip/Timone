@@ -51,7 +51,7 @@
 
   function vistaTermini() {
     var a = quadro(), h = '<div class="avviso info">Usa solo dati che puoi verificare. I bilanci dei concorrenti si scaricano dal Registro delle Imprese in formato XBRL; per studi e statistiche indica sempre la <b>fonte</b>: senza fonte un riferimento non entra nel confronto.</div>' +
-      (T.scrivibile() ? '<div class="riga"><label class="b p" style="cursor:pointer">Carica il bilancio XBRL di un concorrente<input type="file" accept=".xbrl,.xml,.p7m" data-c="bmFile" hidden></label><button class="b p s" data-a="bmNuovo">Riferimento inserito a mano</button></div>' : '');
+      (T.scrivibile() ? '<div class="riga"><label class="b p" style="cursor:pointer">Carica il bilancio XBRL di un concorrente<input type="file" data-c="bmFile" hidden></label><button class="b p s" data-a="bmNuovo">Riferimento inserito a mano</button></div>' : '');
     if (!d().termini.length) return h + '<div class="carta"><p>Nessun termine di confronto.</p></div>';
     d().termini.forEach(function (t) {
       var x = a.termini.concat(a.esclusi).filter(function (y) { return y.t === t; })[0] || {}, anni = Object.keys(t.anni || {}).sort();
